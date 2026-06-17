@@ -1,0 +1,51 @@
+# SPDX-FileCopyrightText: 2026 CERN for the benefit of the SHiP Collaboration
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
+[workspace]
+name = "field_service"
+description = "SHiP magnetic field service (framework-agnostic, covfie-backed)"
+channels = ["https://prefix.dev/ship", "conda-forge"]
+platforms = ["linux-64"]
+
+[dependencies]
+# Required by CovfieFieldSource (find_package mp-units CONFIG REQUIRED).
+mp-units = "*"
+
+# Required by the default BUILD_G4_ADAPTER=ON path.
+geant4 = ">=11.3"
+
+# Required by tools/fairship_to_cvf (only built when ROOT is detected).
+root = ">=6.36"
+
+# Build toolchain.
+cmake = ">=3.28"
+ninja = "*"
+cxx-compiler = "*"
+
+# covfie + GoogleTest are fetched at configure time via FetchContent.
+git = "*"
+
+[activation]
+scripts = ["activate.sh"]
+
+[tasks]
+configure = { cmd = """
+cmake -S . -B build -G Ninja \
+    -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+    -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX \
+    -DCMAKE_INSTALL_LIBDIR=lib \
+    -DCMAKE_PREFIX_PATH=$CONDA_PREFIX \
+""" }
+build = { cmd = "cmake --build build -j", depends-on = ["configure"] }
+install = { cmd = "cmake --install build", depends-on = ["build"] }
+test = { cmd = "ctest --test-dir build --output-on-failure", depends-on = ["build"] }
+clean = "rm -rf build"
+
+[feature.dev.dependencies]
+pre-commit = "*"
+reuse = "*"
+
+[environments]
+default = { solve-group = "default" }
+dev = { features = ["dev"], solve-group = "default" }
