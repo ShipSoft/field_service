@@ -2,11 +2,17 @@
 #
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
-# cvf_to_text: always built (only depends on covfie).
+# cvf_to_text and generate_constant_cvf: only depend on covfie.
 add_executable(cvf_to_text cvf_to_text.cpp)
 target_link_libraries(cvf_to_text PRIVATE covfie::core covfie::cpu)
 
-install(TARGETS cvf_to_text RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+add_executable(generate_constant_cvf generate_constant_cvf.cpp)
+target_link_libraries(generate_constant_cvf PRIVATE covfie::core covfie::cpu)
+
+install(
+    TARGETS cvf_to_text generate_constant_cvf
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
 
 # fairship_to_cvf: only built when ROOT is available. It reads FairShip's
 # legacy ROOT-stored field-map format (TTree "Range" + TTree "Data") and writes
