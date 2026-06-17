@@ -22,16 +22,17 @@ class G4MagFieldAdapter final : public G4MagneticField {
         : eval_{std::move(eval)} {}
 
     void GetFieldValue(G4double const point[4], G4double* bField) const override {
-        using namespace mp_units::si;
         // Geant4 internal length unit is CLHEP::mm; convert to plain mm for the evaluator,
-        // which works in mp-units mm-quantity.
-        auto const x = (point[0] / CLHEP::mm) * milli<metre>;
-        auto const y = (point[1] / CLHEP::mm) * milli<metre>;
-        auto const z = (point[2] / CLHEP::mm) * milli<metre>;
+        // which works in mp-units mm-quantity. Fully qualify the mp-units names because
+        // CLHEP also defines `tesla` and `metre` as globals via Geant4 headers.
+        namespace si = mp_units::si;
+        auto const x = (point[0] / CLHEP::mm) * si::milli<si::metre>;
+        auto const y = (point[1] / CLHEP::mm) * si::milli<si::metre>;
+        auto const z = (point[2] / CLHEP::mm) * si::milli<si::metre>;
         auto const B = eval_->at(x, y, z);
-        bField[0] = B[0].numerical_value_in(tesla) * CLHEP::tesla;
-        bField[1] = B[1].numerical_value_in(tesla) * CLHEP::tesla;
-        bField[2] = B[2].numerical_value_in(tesla) * CLHEP::tesla;
+        bField[0] = B[0].numerical_value_in(si::tesla) * CLHEP::tesla;
+        bField[1] = B[1].numerical_value_in(si::tesla) * CLHEP::tesla;
+        bField[2] = B[2].numerical_value_in(si::tesla) * CLHEP::tesla;
     }
 
    private:

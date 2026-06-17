@@ -71,8 +71,13 @@ if(BUILD_G4_ADAPTER)
     find_package(Geant4 REQUIRED)
 
     # Header-only adapter — expose as an INTERFACE library so consumers pull in
-    # Geant4 transitively.
+    # Geant4 transitively. Export name "G4Adapter" so downstream consumers
+    # write SHiPFieldService::G4Adapter.
     add_library(SHiPFieldServiceG4Adapter INTERFACE)
+    set_target_properties(
+        SHiPFieldServiceG4Adapter
+        PROPERTIES EXPORT_NAME G4Adapter
+    )
     target_include_directories(
         SHiPFieldServiceG4Adapter
         INTERFACE
