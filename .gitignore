@@ -3,3 +3,10 @@ install/
 *.db
 __pycache__/
 .cache/
+.pixi/
+compile_commands.json
+.vscode/
+.idea/
+cmake-build-*/
+doxygen/html/
+doxygen/latex/
