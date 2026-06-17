@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it as below.
+title: SHiP Field Service
+version: 0.1.0
+date-released: "2026-06-17"
+url: https://github.com/ShipSoft/field_service
+repository-code: https://github.com/ShipSoft/field_service
+type: software
+license: LGPL-3.0-or-later
+authors:
+  - name: The SHiP Collaboration
+abstract: Framework-agnostic C++20 library for SHiP magnetic field maps, using covfie for storage and interpolation. Provides a Geant4 adapter as an optional component.
+keywords:
+  - physics
+  - particle-physics
+  - magnetic-field
+  - SHiP
+  - covfie
+  - Geant4

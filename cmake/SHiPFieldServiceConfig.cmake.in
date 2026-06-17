@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2026 CERN for the benefit of the SHiP Collaboration
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+set(_SHiPFS_extra_prefixes "@_mp_units_prefix@")
+list(FILTER _SHiPFS_extra_prefixes EXCLUDE REGEX "^$")
+set(_SHiPFS_saved_CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH}")
+list(APPEND CMAKE_PREFIX_PATH ${_SHiPFS_extra_prefixes})
+
+find_dependency(mp-units CONFIG REQUIRED)
+
+include("${CMAKE_CURRENT_LIST_DIR}/SHiPFieldServiceTargets.cmake")
+
+set(_SHiPFS_g4adapter_target_file
+    "${CMAKE_CURRENT_LIST_DIR}/SHiPFieldServiceG4AdapterTargets.cmake")
+if(EXISTS "${_SHiPFS_g4adapter_target_file}")
+    find_dependency(Geant4 REQUIRED)
+    include("${_SHiPFS_g4adapter_target_file}")
+    set(SHiPFieldService_G4Adapter_FOUND TRUE)
+else()
+    set(SHiPFieldService_G4Adapter_FOUND FALSE)
+endif()
+unset(_SHiPFS_g4adapter_target_file)
+
+check_required_components(SHiPFieldService)
+
+set(CMAKE_PREFIX_PATH "${_SHiPFS_saved_CMAKE_PREFIX_PATH}")
+unset(_SHiPFS_saved_CMAKE_PREFIX_PATH)
+unset(_SHiPFS_extra_prefixes)

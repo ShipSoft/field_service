@@ -1,0 +1,5 @@
+build/
+install/
+*.db
+__pycache__/
+.cache/
