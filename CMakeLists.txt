@@ -2,12 +2,13 @@
 #
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.28)
 
 project(
     SHiPFieldService
     VERSION 0.1.0
-    DESCRIPTION "SHiP magnetic field service (framework-agnostic, covfie-backed)"
+    DESCRIPTION
+        "SHiP magnetic field service (framework-agnostic, covfie-backed)"
     LANGUAGES CXX
 )
 
@@ -36,6 +37,7 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/acts-project/covfie.git
     GIT_TAG v0.13.0
     GIT_SHALLOW TRUE
+    EXCLUDE_FROM_ALL
 )
 set(COVFIE_PLATFORM_CPU ON CACHE BOOL "" FORCE)
 set(COVFIE_PLATFORM_CUDA OFF CACHE BOOL "" FORCE)
@@ -106,7 +108,7 @@ endif()
 # Tests
 # ----------------------------------------------------------------------------
 
-enable_testing()
+include(CTest)
 if(BUILD_TESTING)
     add_subdirectory(tests)
 endif()
