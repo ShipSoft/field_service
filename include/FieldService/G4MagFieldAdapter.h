@@ -3,14 +3,14 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include <CLHEP/Units/SystemOfUnits.h>
+#include "FieldService/IFieldSource.h"
+
 #include <G4MagneticField.hh>
 
+#include <CLHEP/Units/SystemOfUnits.h>
 #include <memory>
 #include <mp-units/systems/si.h>
 #include <utility>
-
-#include "FieldService/IFieldSource.h"
 
 namespace ship {
 
@@ -18,8 +18,7 @@ namespace ship {
 /// `G4FieldManager`/`ChordFinder`; the evaluator carries the per-thread cache.
 class G4MagFieldAdapter final : public G4MagneticField {
    public:
-    explicit G4MagFieldAdapter(std::shared_ptr<IFieldEvaluator> eval)
-        : eval_{std::move(eval)} {}
+    explicit G4MagFieldAdapter(std::shared_ptr<IFieldEvaluator> eval) : eval_{std::move(eval)} {}
 
     void GetFieldValue(G4double const point[4], G4double* bField) const override {
         // Geant4 internal length unit is CLHEP::mm; convert to plain mm for the evaluator,

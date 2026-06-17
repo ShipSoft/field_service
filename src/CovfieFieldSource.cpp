@@ -28,21 +28,22 @@ namespace {
 /// Canonical covfie chain for SHiP field maps: affine(mm→grid) ∘ trilinear ∘
 /// strided ∘ float3 array. The converter (`fairship_to_cvf`) writes the same
 /// chain so the binary format is symmetric.
-using field_t = covfie::field<covfie::backend::affine<covfie::backend::linear<
-    covfie::backend::strided<covfie::vector::size3,
-                             covfie::backend::array<covfie::vector::float3>>>>>;
+using field_t =
+    covfie::field<covfie::backend::affine<covfie::backend::linear<covfie::backend::strided<
+        covfie::vector::size3, covfie::backend::array<covfie::vector::float3>>>>>;
 
 /// Filename resolution: bare names against `$SHIPFIELD_ROOT/share/field/`.
 [[nodiscard]] std::string resolve_cvf_path(std::string const& path) {
-    if (std::filesystem::exists(path)) return path;
+    if (std::filesystem::exists(path))
+        return path;
     auto bare = std::filesystem::path(path).filename();
     if (auto const* root = std::getenv("SHIPFIELD_ROOT")) {
         auto resolved = std::filesystem::path(root) / "share" / "field" / bare;
-        if (std::filesystem::exists(resolved)) return resolved.string();
+        if (std::filesystem::exists(resolved))
+            return resolved.string();
     }
-    throw std::runtime_error(
-        "Cannot locate field map '" + path +
-        "'; set SHIPFIELD_ROOT or provide an absolute path");
+    throw std::runtime_error("Cannot locate field map '" + path +
+                             "'; set SHIPFIELD_ROOT or provide an absolute path");
 }
 
 class CovfieEvaluator final : public IFieldEvaluator {

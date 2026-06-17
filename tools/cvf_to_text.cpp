@@ -25,9 +25,9 @@
 
 namespace {
 
-using field_t = covfie::field<covfie::backend::affine<covfie::backend::linear<
-    covfie::backend::strided<covfie::vector::size3,
-                             covfie::backend::array<covfie::vector::float3>>>>>;
+using field_t =
+    covfie::field<covfie::backend::affine<covfie::backend::linear<covfie::backend::strided<
+        covfie::vector::size3, covfie::backend::array<covfie::vector::float3>>>>>;
 
 void usage(const char* prog) {
     std::cerr << "Usage: " << prog << " <input.cvf> [output.txt]\n"
