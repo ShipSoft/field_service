@@ -49,12 +49,10 @@ repos:
     hooks:
       - id: reuse
 
-  - repo: local
+  - repo: https://github.com/crate-ci/committed
+    rev: v1.1.11
     hooks:
       - id: committed
-        name: committed (conventional commits)
-        language: system
-        entry: committed
         stages: [commit-msg]
 
 ci:
