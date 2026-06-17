@@ -19,6 +19,7 @@
 #include <TFile.h>
 #include <TTree.h>
 
+#include <cmath>
 #include <covfie/core/algebra/affine.hpp>
 #include <covfie/core/backend/primitive/array.hpp>
 #include <covfie/core/backend/transformer/affine.hpp>
@@ -27,7 +28,6 @@
 #include <covfie/core/field_view.hpp>
 #include <covfie/core/parameter_pack.hpp>
 #include <covfie/core/vector.hpp>
-#include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <fstream>
@@ -40,9 +40,8 @@
 // identical to the linear-interpolating reader chain in CovfieFieldSource.
 #include <covfie/core/backend/transformer/nearest_neighbour.hpp>
 using field_t = covfie::field<
-    covfie::backend::affine<covfie::backend::nearest_neighbour<
-        covfie::backend::strided<covfie::vector::size3,
-                                 covfie::backend::array<covfie::vector::float3>>>>>;
+    covfie::backend::affine<covfie::backend::nearest_neighbour<covfie::backend::strided<
+        covfie::vector::size3, covfie::backend::array<covfie::vector::float3>>>>>;
 
 namespace {
 
@@ -104,8 +103,8 @@ int main(int argc, char** argv) {
     auto const Nz = static_cast<std::size_t>(std::lround((zMax - zMin) / dz)) + 1;
 
     std::cout << "Grid: " << Nx << " x " << Ny << " x " << Nz << " samples\n"
-              << "Range: x[" << xMin << ", " << xMax << "] y[" << yMin << ", " << yMax
-              << "] z[" << zMin << ", " << zMax << "] (mm)\n";
+              << "Range: x[" << xMin << ", " << xMax << "] y[" << yMin << ", " << yMax << "] z["
+              << zMin << ", " << zMax << "] (mm)\n";
 
     auto const expected_entries = static_cast<Long64_t>(Nx * Ny * Nz);
     if (data_tree->GetEntries() != expected_entries) {
@@ -118,8 +117,7 @@ int main(int argc, char** argv) {
     covfie::algebra::affine<3> translation =
         covfie::algebra::affine<3>::translation(-xMin, -yMin, -zMin);
     covfie::algebra::affine<3> scaling = covfie::algebra::affine<3>::scaling(
-        static_cast<float>(Nx - 1) / (xMax - xMin),
-        static_cast<float>(Ny - 1) / (yMax - yMin),
+        static_cast<float>(Nx - 1) / (xMax - xMin), static_cast<float>(Ny - 1) / (yMax - yMin),
         static_cast<float>(Nz - 1) / (zMax - zMin));
 
     field_t field(covfie::make_parameter_pack(

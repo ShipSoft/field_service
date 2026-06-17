@@ -27,9 +27,8 @@
 #include <string>
 
 using field_t = covfie::field<
-    covfie::backend::affine<covfie::backend::nearest_neighbour<
-        covfie::backend::strided<covfie::vector::size3,
-                                 covfie::backend::array<covfie::vector::float3>>>>>;
+    covfie::backend::affine<covfie::backend::nearest_neighbour<covfie::backend::strided<
+        covfie::vector::size3, covfie::backend::array<covfie::vector::float3>>>>>;
 
 int main(int argc, char** argv) {
     if (argc != 11) {
@@ -52,10 +51,9 @@ int main(int argc, char** argv) {
     constexpr std::size_t N = 2;
 
     auto translation = covfie::algebra::affine<3>::translation(-xMin, -yMin, -zMin);
-    auto scaling = covfie::algebra::affine<3>::scaling(
-        static_cast<float>(N - 1) / (xMax - xMin),
-        static_cast<float>(N - 1) / (yMax - yMin),
-        static_cast<float>(N - 1) / (zMax - zMin));
+    auto scaling = covfie::algebra::affine<3>::scaling(static_cast<float>(N - 1) / (xMax - xMin),
+                                                       static_cast<float>(N - 1) / (yMax - yMin),
+                                                       static_cast<float>(N - 1) / (zMax - zMin));
 
     field_t field(covfie::make_parameter_pack(
         field_t::backend_t::configuration_t(scaling * translation),
@@ -84,8 +82,7 @@ int main(int argc, char** argv) {
     }
     field.dump(out);
     std::cout << "Wrote " << out_path << " (Bx=" << Bx << " By=" << By << " Bz=" << Bz
-              << " T, box ["
-              << xMin << "," << xMax << "] [" << yMin << "," << yMax << "] [" << zMin << ","
-              << zMax << "] mm)\n";
+              << " T, box [" << xMin << "," << xMax << "] [" << yMin << "," << yMax << "] [" << zMin
+              << "," << zMax << "] mm)\n";
     return 0;
 }

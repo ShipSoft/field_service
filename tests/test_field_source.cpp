@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
+#include "FieldService/CovfieFieldSource.h"
+
 #include <covfie/core/algebra/affine.hpp>
 #include <covfie/core/backend/primitive/array.hpp>
 #include <covfie/core/backend/transformer/affine.hpp>
@@ -16,15 +18,12 @@
 #include <fstream>
 #include <gtest/gtest.h>
 
-#include "FieldService/CovfieFieldSource.h"
-
 // Writer chain uses nearest_neighbour so `view.at(...)` returns an lvalue ref
 // we can assign through during construction. The file is binary-compatible
 // with CovfieFieldSource's linear-interpolating reader chain.
 using field_t = covfie::field<
-    covfie::backend::affine<covfie::backend::nearest_neighbour<
-        covfie::backend::strided<covfie::vector::size3,
-                                 covfie::backend::array<covfie::vector::float3>>>>>;
+    covfie::backend::affine<covfie::backend::nearest_neighbour<covfie::backend::strided<
+        covfie::vector::size3, covfie::backend::array<covfie::vector::float3>>>>>;
 
 namespace {
 
@@ -36,10 +35,9 @@ std::filesystem::path WriteTinyConstantField() {
     constexpr float zMin = -10.0f, zMax = 10.0f;
 
     auto translation = covfie::algebra::affine<3>::translation(-xMin, -yMin, -zMin);
-    auto scaling = covfie::algebra::affine<3>::scaling(
-        static_cast<float>(N - 1) / (xMax - xMin),
-        static_cast<float>(N - 1) / (yMax - yMin),
-        static_cast<float>(N - 1) / (zMax - zMin));
+    auto scaling = covfie::algebra::affine<3>::scaling(static_cast<float>(N - 1) / (xMax - xMin),
+                                                       static_cast<float>(N - 1) / (yMax - yMin),
+                                                       static_cast<float>(N - 1) / (zMax - zMin));
 
     field_t field(covfie::make_parameter_pack(
         field_t::backend_t::configuration_t(scaling * translation),
