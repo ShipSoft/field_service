@@ -1,21 +1,37 @@
-<!--
-SPDX-FileCopyrightText: 2026 CERN for the benefit of the SHiP Collaboration
-
-SPDX-License-Identifier: LGPL-3.0-or-later
--->
-
 # Changelog
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [0.1.0] - 2026-06-18
 
 ### Features
 
-- `IFieldSource` / `IFieldEvaluator` interfaces for point-query magnetic field access
-- `CovfieFieldSource` loading `.cvf` field maps via covfie
-- Optional `G4MagFieldAdapter` Geant4 integration (header-only, separate CMake component)
-- `fairship_to_cvf` converter from FairShip's legacy ROOT field-map format
-- `cvf_to_text` inspection tool
-- `generate_constant_cvf` closure-test field-map generator
-- Exported CMake package (`SHiPFieldService::Core`, `SHiPFieldService::G4Adapter`)
+- Initial scaffold of SHiP field service
+- *(tools)* Add generate_constant_cvf for closure-test field maps
+
+### Bug Fixes
+
+- *(cmake)* Export G4 adapter as SHiPFieldService::G4Adapter
+- *(pre-commit)* Use upstream committed hook
+
+### Documentation
+
+- Document pixi workflow and add release-ready repo docs
+
+### Styling
+
+- Pre-commit fixes
+
+### Build
+
+- *(cmake)* Isolate FetchContent deps and default tests on
+- *(pixi)* Add reproducible pixi environment
+- *(cmake)* Bump covfie FetchContent pin to v0.15.6
+- *(cliff)* Include changelog file header
+
+### Miscellaneous
+
+- Add Pixi build, Doxygen and lock-refresh workflows
+- Add pre-commit config and repo hygiene files
+- *(cmake)* Make CMAKE_CXX_STANDARD overridable from the caller
+- Add release automation via git-cliff

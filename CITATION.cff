@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: If you use this software, please cite it as below.
 title: SHiP Field Service
 version: 0.1.0
-date-released: "2026-06-17"
+date-released: "2026-06-18"
 url: https://github.com/ShipSoft/field_service
 repository-code: https://github.com/ShipSoft/field_service
 type: software
