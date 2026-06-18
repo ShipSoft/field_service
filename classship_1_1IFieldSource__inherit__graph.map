@@ -1,0 +1,5 @@
+<map id="ship::IFieldSource" name="ship::IFieldSource">
+<area shape="rect" id="Node000001" title="Source of one or more named field regions." alt="" coords="24,5,160,31"/>
+<area shape="rect" id="Node000002" href="$classship_1_1CovfieFieldSource.html" title="Concrete IFieldSource aggregating one covfie&#45;backed evaluator per magnet." alt="" coords="5,79,179,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="95,44,95,79,89,79,89,44"/>
+</map>
