@@ -2,11 +2,11 @@
 #
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
-name: Doxygen GitHub Pages
+name: Doxygen Pages
 on:
   push:
     branches: [main]
   workflow_dispatch:
 jobs:
-  deploy:
-    uses: ShipSoft/.github/.github/workflows/doxygen-gh-pages.yml@main
+  docs:
+    uses: ShipSoft/.github/.github/workflows/doxygen-pages.yml@main
