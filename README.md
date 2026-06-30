@@ -18,6 +18,10 @@ and interpolation of regular-grid field maps. A small optional Geant4 adapter
 library has no Geant4 dependency, so reconstruction can consume it without
 pulling Geant4 in.
 
+## Documentation
+
+An [automatic class reference](https://shipsoft.github.io/field_service/) is built using Doxygen from comments in the C++ code.
+
 ## Layout
 
 - `include/FieldService/IFieldSource.h` — interface (point-query evaluator,
