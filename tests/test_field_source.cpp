@@ -3,73 +3,67 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "FieldService/CovfieFieldSource.h"
+#include "detail/covfie_chains.h"
 
+#include <array>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
-#include <covfie/core/algebra/affine.hpp>
-#include <covfie/core/backend/primitive/array.hpp>
-#include <covfie/core/backend/transformer/affine.hpp>
-#include <covfie/core/backend/transformer/nearest_neighbour.hpp>
-#include <covfie/core/backend/transformer/strided.hpp>
-#include <covfie/core/field.hpp>
-#include <covfie/core/field_view.hpp>
-#include <covfie/core/parameter_pack.hpp>
-#include <covfie/core/vector.hpp>
-#include <cstdio>
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
-
-// Writer chain uses nearest_neighbour so `view.at(...)` returns an lvalue ref
-// we can assign through during construction. The file is binary-compatible
-// with CovfieFieldSource's linear-interpolating reader chain.
-using field_t = covfie::field<
-    covfie::backend::affine<covfie::backend::nearest_neighbour<covfie::backend::strided<
-        covfie::vector::size3, covfie::backend::array<covfie::vector::float3>>>>>;
+#include <functional>
+#include <string>
+#include <vector>
 
 namespace {
 
-// Write a tiny constant field map to a temp file and return the path.
-std::filesystem::path WriteTinyConstantField() {
-    constexpr std::size_t N = 3;
-    constexpr float xMin = -10.0f, xMax = 10.0f;
-    constexpr float yMin = -10.0f, yMax = 10.0f;
-    constexpr float zMin = -10.0f, zMax = 10.0f;
+constexpr std::size_t kN = 3;
+constexpr float kMin = -10.0f;
+constexpr float kMax = 10.0f;
 
-    auto translation = covfie::algebra::affine<3>::translation(-xMin, -yMin, -zMin);
-    auto scaling = covfie::algebra::affine<3>::scaling(static_cast<float>(N - 1) / (xMax - xMin),
-                                                       static_cast<float>(N - 1) / (yMax - yMin),
-                                                       static_cast<float>(N - 1) / (zMax - zMin));
+using FillFn = std::function<std::array<float, 3>(float x, float y, float z)>;
 
-    field_t field(covfie::make_parameter_pack(
-        field_t::backend_t::configuration_t(scaling * translation),
-        field_t::backend_t::backend_t::configuration_t{},
-        field_t::backend_t::backend_t::backend_t::configuration_t{N, N, N}));
-    field_t::view_t view(field);
-    for (std::size_t ix = 0; ix < N; ++ix) {
-        float const x = xMin + ix * (xMax - xMin) / (N - 1);
-        for (std::size_t iy = 0; iy < N; ++iy) {
-            float const y = yMin + iy * (yMax - yMin) / (N - 1);
-            for (std::size_t iz = 0; iz < N; ++iz) {
-                float const z = zMin + iz * (zMax - zMin) / (N - 1);
+/// Write a field over the [-10, 10]³ mm box to `path`, sampling `fill` at each
+/// grid node. Uses the canonical writer chain (nearest_neighbour, so
+/// `view.at(...)` yields an assignable lvalue) from detail/covfie_chains.h.
+void WriteField(std::filesystem::path const& path, FillFn const& fill) {
+    ship::detail::GridSpec const spec{{kMin, kMin, kMin}, {kMax, kMax, kMax}, {kN, kN, kN}};
+    auto field = ship::detail::make_writer_field(spec);
+    ship::detail::writer_field_t::view_t view(field);
+    for (std::size_t ix = 0; ix < kN; ++ix) {
+        float const x = ship::detail::grid_pos(kMin, kMax, kN, ix);
+        for (std::size_t iy = 0; iy < kN; ++iy) {
+            float const y = ship::detail::grid_pos(kMin, kMax, kN, iy);
+            for (std::size_t iz = 0; iz < kN; ++iz) {
+                float const z = ship::detail::grid_pos(kMin, kMax, kN, iz);
                 auto& p = view.at(x, y, z);
-                p[0] = 0.0f;
-                p[1] = 1.5f;
-                p[2] = 0.0f;
+                auto const B = fill(x, y, z);
+                p[0] = B[0];
+                p[1] = B[1];
+                p[2] = B[2];
             }
         }
     }
-
-    auto path = std::filesystem::temp_directory_path() / "ship_field_service_tinyconst.cvf";
     std::ofstream out(path, std::ios::binary);
     field.dump(out);
-    return path;
 }
+
+/// Temp .cvf path unique to a test, removed on scope exit (also on a Catch2
+/// REQUIRE that throws out of the test body).
+struct TempCvf {
+    std::filesystem::path path;
+    explicit TempCvf(char const* name)
+        : path(std::filesystem::temp_directory_path() /
+               (std::string("field_service_") + name + ".cvf")) {}
+    ~TempCvf() { std::filesystem::remove(path); }
+};
 
 }  // namespace
 
 TEST_CASE("CovfieFieldSource.RoundtripConstantField", "[field_source]") {
-    auto path = WriteTinyConstantField();
-    auto eval = ship::loadCovfieField(path.string());
+    TempCvf tmp("roundtrip_constant");
+    WriteField(tmp.path, [](float, float, float) { return std::array{0.0f, 1.5f, 0.0f}; });
+    auto eval = ship::loadCovfieField(tmp.path.string());
     REQUIRE(eval);
 
     using namespace mp_units::si;
@@ -84,14 +78,43 @@ TEST_CASE("CovfieFieldSource.RoundtripConstantField", "[field_source]") {
     B = eval->at(3.0 * milli<metre>, -4.0 * milli<metre>, 7.0 * milli<metre>);
     CHECK_THAT(B[1].numerical_value_in(tesla), WithinAbs(1.5, 1e-6));
 
-    std::filesystem::remove(path);
+    // Exactly on the box corners — a valid query, must not read past the grid.
+    B = eval->at(kMax * milli<metre>, kMax * milli<metre>, kMax * milli<metre>);
+    CHECK_THAT(B[1].numerical_value_in(tesla), WithinAbs(1.5, 1e-6));
+    B = eval->at(kMin * milli<metre>, kMin * milli<metre>, kMin * milli<metre>);
+    CHECK_THAT(B[1].numerical_value_in(tesla), WithinAbs(1.5, 1e-6));
+}
+
+TEST_CASE("CovfieFieldSource.ClampsToBoundaryValue", "[field_source]") {
+    TempCvf tmp("clamps_to_boundary");
+    // By varies linearly with x so out-of-bounds garbage cannot masquerade as
+    // the expected value: By(x) = 0.1 * x Tesla, i.e. -1 T .. +1 T.
+    WriteField(tmp.path, [](float x, float, float) { return std::array{0.0f, 0.1f * x, 0.0f}; });
+    auto eval = ship::loadCovfieField(tmp.path.string());
+    REQUIRE(eval);
+
+    using namespace mp_units::si;
+    using Catch::Matchers::WithinAbs;
+
+    // Trilinear interpolation reproduces a linear field exactly (up to float).
+    auto B = eval->at(5.0 * milli<metre>, 0.0 * milli<metre>, 0.0 * milli<metre>);
+    CHECK_THAT(B[1].numerical_value_in(tesla), WithinAbs(0.5, 1e-5));
+
+    // Outside the box the query clamps to the boundary-plane value.
+    B = eval->at(50.0 * milli<metre>, 0.0 * milli<metre>, 0.0 * milli<metre>);
+    CHECK_THAT(B[1].numerical_value_in(tesla), WithinAbs(1.0, 1e-5));
+    B = eval->at(-50.0 * milli<metre>, 0.0 * milli<metre>, 0.0 * milli<metre>);
+    CHECK_THAT(B[1].numerical_value_in(tesla), WithinAbs(-1.0, 1e-5));
+    B = eval->at(100.0 * milli<metre>, 100.0 * milli<metre>, -100.0 * milli<metre>);
+    CHECK_THAT(B[1].numerical_value_in(tesla), WithinAbs(1.0, 1e-5));
 }
 
 TEST_CASE("CovfieFieldSource.SourceAggregatesRegions", "[field_source]") {
-    auto path = WriteTinyConstantField();
+    TempCvf tmp("aggregates_regions");
+    WriteField(tmp.path, [](float, float, float) { return std::array{0.0f, 1.5f, 0.0f}; });
     std::vector<ship::CovfieFieldSource::MagnetConfig> magnets = {
-        {"MagA", "MuonShield", path.string()},
-        {"MagB", "Spectrometer", path.string()},
+        {"MagA", "MuonShield", tmp.path.string()},
+        {"MagB", "Spectrometer", tmp.path.string()},
     };
     ship::CovfieFieldSource src(std::move(magnets));
     auto const& regs = src.regions();
@@ -101,6 +124,4 @@ TEST_CASE("CovfieFieldSource.SourceAggregatesRegions", "[field_source]") {
     CHECK(regs[1].volume_pattern == "Spectrometer");
     REQUIRE(regs[0].field);
     REQUIRE(regs[1].field);
-
-    std::filesystem::remove(path);
 }

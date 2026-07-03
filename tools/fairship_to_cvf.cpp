@@ -4,7 +4,7 @@
 //
 // fairship_to_cvf — convert FairShip's legacy ROOT-stored field-map format
 // into a covfie .cvf binary using the canonical SHiP backend chain
-// (affine ∘ linear ∘ strided ∘ float3-array).
+// (see src/detail/covfie_chains.h).
 //
 // FairShip format (see FairShip/field/README.md):
 //   TTree "Range": single-entry tree with float branches
@@ -16,32 +16,19 @@
 // We convert positions to mm (so the resulting covfie field matches what
 // CovfieFieldSource expects) and keep B in Tesla.
 
-#include <TFile.h>
-#include <TTree.h>
+#include "detail/covfie_chains.h"
 
+#include <TFile.h>
+#include <TTreeReader.h>
+#include <TTreeReaderValue.h>
+
+#include <array>
 #include <cmath>
-#include <covfie/core/algebra/affine.hpp>
-#include <covfie/core/backend/primitive/array.hpp>
-#include <covfie/core/backend/transformer/affine.hpp>
-#include <covfie/core/backend/transformer/strided.hpp>
-#include <covfie/core/field.hpp>
-#include <covfie/core/field_view.hpp>
-#include <covfie/core/parameter_pack.hpp>
-#include <covfie/core/vector.hpp>
-#include <cstdint>
-#include <cstdlib>
+#include <cstddef>
 #include <fstream>
 #include <iostream>
 #include <memory>
 #include <string>
-
-// Writer chain uses nearest_neighbour so `view.at(...)` returns an lvalue ref
-// we can assign through during construction. The binary serialisation is
-// identical to the linear-interpolating reader chain in CovfieFieldSource.
-#include <covfie/core/backend/transformer/nearest_neighbour.hpp>
-using field_t = covfie::field<
-    covfie::backend::affine<covfie::backend::nearest_neighbour<covfie::backend::strided<
-        covfie::vector::size3, covfie::backend::array<covfie::vector::float3>>>>>;
 
 namespace {
 
@@ -65,85 +52,73 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    auto* range_tree = in_file->Get<TTree>("Range");
-    auto* data_tree = in_file->Get<TTree>("Data");
-    if (!range_tree || !data_tree) {
-        std::cerr << "Input file lacks Range or Data TTree\n";
+    // Read the single-entry Range tree.
+    TTreeReader range_reader("Range", in_file.get());
+    TTreeReaderValue<float> rxMin(range_reader, "xMin"), rxMax(range_reader, "xMax"),
+        rdx(range_reader, "dx");
+    TTreeReaderValue<float> ryMin(range_reader, "yMin"), ryMax(range_reader, "yMax"),
+        rdy(range_reader, "dy");
+    TTreeReaderValue<float> rzMin(range_reader, "zMin"), rzMax(range_reader, "zMax"),
+        rdz(range_reader, "dz");
+    if (!range_reader.Next()) {
+        std::cerr << "Input file lacks a readable Range TTree\n";
         return 1;
     }
-
-    // Read the single-entry Range tree.
-    float xMin, xMax, dx, yMin, yMax, dy, zMin, zMax, dz;
-    range_tree->SetBranchAddress("xMin", &xMin);
-    range_tree->SetBranchAddress("xMax", &xMax);
-    range_tree->SetBranchAddress("dx", &dx);
-    range_tree->SetBranchAddress("yMin", &yMin);
-    range_tree->SetBranchAddress("yMax", &yMax);
-    range_tree->SetBranchAddress("dy", &dy);
-    range_tree->SetBranchAddress("zMin", &zMin);
-    range_tree->SetBranchAddress("zMax", &zMax);
-    range_tree->SetBranchAddress("dz", &dz);
-    range_tree->GetEntry(0);
 
     // FairShip stores positions in cm; convert to mm here so the rest of the
     // toolchain works in a single length unit.
     constexpr float kCmToMm = 10.0f;
-    xMin *= kCmToMm;
-    xMax *= kCmToMm;
-    dx *= kCmToMm;
-    yMin *= kCmToMm;
-    yMax *= kCmToMm;
-    dy *= kCmToMm;
-    zMin *= kCmToMm;
-    zMax *= kCmToMm;
-    dz *= kCmToMm;
+    std::array<float, 3> const min{*rxMin * kCmToMm, *ryMin * kCmToMm, *rzMin * kCmToMm};
+    std::array<float, 3> const max{*rxMax * kCmToMm, *ryMax * kCmToMm, *rzMax * kCmToMm};
+    std::array<float, 3> const spacing{*rdx * kCmToMm, *rdy * kCmToMm, *rdz * kCmToMm};
 
-    auto const Nx = static_cast<std::size_t>(std::lround((xMax - xMin) / dx)) + 1;
-    auto const Ny = static_cast<std::size_t>(std::lround((yMax - yMin) / dy)) + 1;
-    auto const Nz = static_cast<std::size_t>(std::lround((zMax - zMin) / dz)) + 1;
+    std::array<std::size_t, 3> n{};
+    for (std::size_t i = 0; i < 3; ++i) {
+        if (!(spacing[i] > 0.0f) || !(max[i] > min[i])) {
+            std::cerr << "Invalid Range tree: need max > min and spacing > 0 on every axis\n";
+            return 1;
+        }
+        n[i] = static_cast<std::size_t>(std::lround((max[i] - min[i]) / spacing[i])) + 1;
+        if (n[i] < 2) {
+            std::cerr << "Invalid Range tree: need at least 2 samples per axis\n";
+            return 1;
+        }
+    }
+    auto const Nx = n[0];
+    auto const Ny = n[1];
+    auto const Nz = n[2];
 
     std::cout << "Grid: " << Nx << " x " << Ny << " x " << Nz << " samples\n"
-              << "Range: x[" << xMin << ", " << xMax << "] y[" << yMin << ", " << yMax << "] z["
-              << zMin << ", " << zMax << "] (mm)\n";
+              << "Range: x[" << min[0] << ", " << max[0] << "] y[" << min[1] << ", " << max[1]
+              << "] z[" << min[2] << ", " << max[2] << "] (mm)\n";
 
+    TTreeReader data_reader("Data", in_file.get());
+    TTreeReaderValue<float> Bx(data_reader, "Bx"), By(data_reader, "By"), Bz(data_reader, "Bz");
     auto const expected_entries = static_cast<Long64_t>(Nx * Ny * Nz);
-    if (data_tree->GetEntries() != expected_entries) {
-        std::cerr << "Data tree has " << data_tree->GetEntries() << " entries, expected "
+    if (data_reader.GetEntries() != expected_entries) {
+        std::cerr << "Data tree has " << data_reader.GetEntries() << " entries, expected "
                   << expected_entries << '\n';
         return 1;
     }
 
-    // Affine maps real-world (x, y, z) in mm to fractional grid indices.
-    covfie::algebra::affine<3> translation =
-        covfie::algebra::affine<3>::translation(-xMin, -yMin, -zMin);
-    covfie::algebra::affine<3> scaling = covfie::algebra::affine<3>::scaling(
-        static_cast<float>(Nx - 1) / (xMax - xMin), static_cast<float>(Ny - 1) / (yMax - yMin),
-        static_cast<float>(Nz - 1) / (zMax - zMin));
+    auto field = ship::detail::make_writer_field({min, max, n});
+    ship::detail::writer_field_t::view_t view(field);
 
-    field_t field(covfie::make_parameter_pack(
-        field_t::backend_t::configuration_t(scaling * translation),
-        field_t::backend_t::backend_t::configuration_t{},
-        field_t::backend_t::backend_t::backend_t::configuration_t{Nx, Ny, Nz}));
-    field_t::view_t view(field);
-
-    float Bx, By, Bz;
-    data_tree->SetBranchAddress("Bx", &Bx);
-    data_tree->SetBranchAddress("By", &By);
-    data_tree->SetBranchAddress("Bz", &Bz);
-
-    // FairShip binning: (iX * Ny + iY) * Nz + iZ
-    Long64_t entry = 0;
+    // FairShip binning: (iX * Ny + iY) * Nz + iZ — matches sequential reads.
     for (std::size_t ix = 0; ix < Nx; ++ix) {
-        float const x = xMin + ix * dx;
+        float const x = ship::detail::grid_pos(min[0], max[0], Nx, ix);
         for (std::size_t iy = 0; iy < Ny; ++iy) {
-            float const y = yMin + iy * dy;
+            float const y = ship::detail::grid_pos(min[1], max[1], Ny, iy);
             for (std::size_t iz = 0; iz < Nz; ++iz) {
-                float const z = zMin + iz * dz;
-                data_tree->GetEntry(entry++);
+                float const z = ship::detail::grid_pos(min[2], max[2], Nz, iz);
+                if (!data_reader.Next()) {
+                    std::cerr << "Data tree ended prematurely\n";
+                    return 1;
+                }
                 auto& p = view.at(x, y, z);
-                p[0] = Bx;
-                p[1] = By;
-                p[2] = Bz;
+                p[0] = *Bx;
+                p[1] = *By;
+                p[2] = *Bz;
             }
         }
     }

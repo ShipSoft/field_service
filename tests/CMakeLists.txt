@@ -22,6 +22,8 @@ target_link_libraries(
     test_field_source
     PRIVATE SHiPFieldService Catch2::Catch2WithMain covfie::core covfie::cpu
 )
+# For the internal writer-chain header (src/detail/covfie_chains.h).
+target_include_directories(test_field_source PRIVATE ${PROJECT_SOURCE_DIR}/src)
 catch_discover_tests(test_field_source)
 
 # Compile/link guarantee: the Core library must not pull Geant4. We add a

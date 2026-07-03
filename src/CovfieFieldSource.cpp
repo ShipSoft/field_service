@@ -4,14 +4,8 @@
 
 #include "FieldService/CovfieFieldSource.h"
 
-#include <covfie/core/backend/primitive/array.hpp>
-#include <covfie/core/backend/transformer/affine.hpp>
-#include <covfie/core/backend/transformer/linear.hpp>
-#include <covfie/core/backend/transformer/strided.hpp>
-#include <covfie/core/field.hpp>
-#include <covfie/core/field_view.hpp>
-#include <covfie/core/parameter_pack.hpp>
-#include <covfie/core/vector.hpp>
+#include "detail/covfie_chains.h"
+
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -25,12 +19,7 @@ namespace ship {
 
 namespace {
 
-/// Canonical covfie chain for SHiP field maps: affine(mm→grid) ∘ trilinear ∘
-/// strided ∘ float3 array. The converter (`fairship_to_cvf`) writes the same
-/// chain so the binary format is symmetric.
-using field_t =
-    covfie::field<covfie::backend::affine<covfie::backend::linear<covfie::backend::strided<
-        covfie::vector::size3, covfie::backend::array<covfie::vector::float3>>>>>;
+using field_t = detail::reader_field_t;
 
 /// Filename resolution: bare names against `$SHIPFIELD_ROOT/share/field/`.
 [[nodiscard]] std::string resolve_cvf_path(std::string const& path) {
