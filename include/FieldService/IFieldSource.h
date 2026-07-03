@@ -13,8 +13,9 @@ namespace ship {
 
 /// Framework-agnostic point-query evaluator for one magnetic field region.
 ///
-/// Implementations must be thread-safe; covfie-backed evaluators use a
-/// per-worker thread_local view to keep `at()` allocation-free on the hot path.
+/// Implementations must be thread-safe; covfie-backed evaluators hold an
+/// immutable field and a single const view, so `at()` is safe to call from
+/// any thread and allocation-free on the hot path.
 class IFieldEvaluator {
    public:
     using pos_q = mp_units::quantity<mp_units::si::milli<mp_units::si::metre>, double>;
