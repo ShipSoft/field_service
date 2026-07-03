@@ -2,12 +2,18 @@
 #
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
-# cvf_to_text and generate_constant_cvf: only depend on covfie.
+# cvf_to_text and generate_constant_cvf: only depend on covfie. All tools
+# share the internal chain header (src/detail/covfie_chains.h).
 add_executable(cvf_to_text cvf_to_text.cpp)
 target_link_libraries(cvf_to_text PRIVATE covfie::core covfie::cpu)
+target_include_directories(cvf_to_text PRIVATE ${PROJECT_SOURCE_DIR}/src)
 
 add_executable(generate_constant_cvf generate_constant_cvf.cpp)
 target_link_libraries(generate_constant_cvf PRIVATE covfie::core covfie::cpu)
+target_include_directories(
+    generate_constant_cvf
+    PRIVATE ${PROJECT_SOURCE_DIR}/src
+)
 
 install(
     TARGETS cvf_to_text generate_constant_cvf
@@ -19,12 +25,26 @@ install(
 # (TTree "Range" + TTree "Data") and writes a covfie .cvf with the same
 # backend chain CovfieFieldSource expects. plot_field_map renders a .cvf as
 # ROOT histograms/PDFs via the public evaluator API.
-find_package(ROOT QUIET COMPONENTS Tree Hist Graf Gpad)
+find_package(
+    ROOT
+    QUIET
+    COMPONENTS Tree TreePlayer Hist Graf Gpad
+)
 if(ROOT_FOUND)
     add_executable(fairship_to_cvf fairship_to_cvf.cpp)
     target_link_libraries(
         fairship_to_cvf
-        PRIVATE covfie::core covfie::cpu ROOT::Tree ROOT::RIO ROOT::Core
+        PRIVATE
+            covfie::core
+            covfie::cpu
+            ROOT::Tree
+            ROOT::TreePlayer
+            ROOT::RIO
+            ROOT::Core
+    )
+    target_include_directories(
+        fairship_to_cvf
+        PRIVATE ${PROJECT_SOURCE_DIR}/src
     )
     add_executable(plot_field_map plot_field_map.cpp)
     target_link_libraries(
