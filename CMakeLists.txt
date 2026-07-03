@@ -88,13 +88,12 @@ if(BUILD_G4_ADAPTER)
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
             $<INSTALL_INTERFACE:include>
     )
+    # Geant4's imported targets in Geant4_LIBRARIES carry their include dirs;
+    # adding Geant4_INCLUDE_DIRS here would bake absolute build-machine paths
+    # into the exported targets file.
     target_link_libraries(
         SHiPFieldServiceG4Adapter
         INTERFACE SHiPFieldService ${Geant4_LIBRARIES}
-    )
-    target_include_directories(
-        SHiPFieldServiceG4Adapter
-        INTERFACE ${Geant4_INCLUDE_DIRS}
     )
 endif()
 
