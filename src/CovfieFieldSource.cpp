@@ -9,7 +9,9 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <map>
 #include <memory>
+#include <mutex>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -39,31 +41,47 @@ class CovfieEvaluator final : public IFieldEvaluator {
    public:
     explicit CovfieEvaluator(field_t field) : field_{std::move(field)} {}
 
+    // view_ references field_; moving would dangle it. Instances only ever
+    // live behind a shared_ptr, so immovability costs nothing.
+    CovfieEvaluator(CovfieEvaluator const&) = delete;
+    CovfieEvaluator& operator=(CovfieEvaluator const&) = delete;
+
     [[nodiscard]] std::array<field_q, 3> at(pos_q x, pos_q y, pos_q z) const override {
         using namespace mp_units::si;
-        // covfie views are thin handles around the backend; constructing per
-        // call is cheap and avoids the thread_local-with-per-instance-state
-        // pitfall. Field is immutable post-load, so this is thread-safe.
-        field_t::view_t view{field_};
-        auto const v = view.at(static_cast<float>(x.numerical_value_in(milli<metre>)),
-                               static_cast<float>(y.numerical_value_in(milli<metre>)),
-                               static_cast<float>(z.numerical_value_in(milli<metre>)));
+        auto const v = view_.at(static_cast<float>(x.numerical_value_in(milli<metre>)),
+                                static_cast<float>(y.numerical_value_in(milli<metre>)),
+                                static_cast<float>(z.numerical_value_in(milli<metre>)));
         return {v[0] * tesla, v[1] * tesla, v[2] * tesla};
     }
 
    private:
     field_t field_;
+    // Field data is immutable post-load and view_t::at is const and stateless,
+    // so one view shared across threads is safe and keeps at() allocation-free.
+    field_t::view_t view_{field_};
 };
 
 }  // namespace
 
 std::shared_ptr<IFieldEvaluator> loadCovfieField(std::string const& cvf_path) {
-    auto resolved = resolve_cvf_path(cvf_path);
+    auto resolved = std::filesystem::canonical(resolve_cvf_path(cvf_path)).string();
+
+    // Magnets may share a map file; hand out one evaluator per file so the
+    // (potentially large) grid is held in memory only once.
+    static std::mutex cache_mutex;
+    static std::map<std::string, std::weak_ptr<IFieldEvaluator>> cache;
+    std::lock_guard lock{cache_mutex};
+    if (auto it = cache.find(resolved); it != cache.end())
+        if (auto cached = it->second.lock())
+            return cached;
+
     std::ifstream is(resolved, std::ios::binary);
     if (!is.good())
         throw std::runtime_error("Failed to open field map: " + resolved);
     field_t field(is);
-    return std::make_shared<CovfieEvaluator>(std::move(field));
+    auto eval = std::make_shared<CovfieEvaluator>(std::move(field));
+    cache[resolved] = eval;
+    return eval;
 }
 
 CovfieFieldSource::CovfieFieldSource(std::vector<MagnetConfig> magnets) {

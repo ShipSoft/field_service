@@ -124,4 +124,6 @@ TEST_CASE("CovfieFieldSource.SourceAggregatesRegions", "[field_source]") {
     CHECK(regs[1].volume_pattern == "Spectrometer");
     REQUIRE(regs[0].field);
     REQUIRE(regs[1].field);
+    // Both magnets reference the same file — the loader dedups the evaluator.
+    CHECK(regs[0].field == regs[1].field);
 }
