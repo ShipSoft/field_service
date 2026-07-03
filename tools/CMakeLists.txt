@@ -14,20 +14,30 @@ install(
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-# fairship_to_cvf: only built when ROOT is available. It reads FairShip's
-# legacy ROOT-stored field-map format (TTree "Range" + TTree "Data") and writes
-# a covfie .cvf with the same backend chain CovfieFieldSource expects.
-find_package(ROOT QUIET COMPONENTS Tree)
+# fairship_to_cvf and plot_field_map: only built when ROOT is available.
+# fairship_to_cvf reads FairShip's legacy ROOT-stored field-map format
+# (TTree "Range" + TTree "Data") and writes a covfie .cvf with the same
+# backend chain CovfieFieldSource expects. plot_field_map renders a .cvf as
+# ROOT histograms/PDFs via the public evaluator API.
+find_package(ROOT QUIET COMPONENTS Tree Hist Graf Gpad)
 if(ROOT_FOUND)
     add_executable(fairship_to_cvf fairship_to_cvf.cpp)
     target_link_libraries(
         fairship_to_cvf
         PRIVATE covfie::core covfie::cpu ROOT::Tree ROOT::RIO ROOT::Core
     )
-    install(TARGETS fairship_to_cvf RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    add_executable(plot_field_map plot_field_map.cpp)
+    target_link_libraries(
+        plot_field_map
+        PRIVATE SHiPFieldService ROOT::Hist ROOT::Graf ROOT::Gpad ROOT::Core
+    )
+    install(
+        TARGETS fairship_to_cvf plot_field_map
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    )
 else()
     message(
         STATUS
-        "ROOT not found — skipping fairship_to_cvf converter (CovfieFieldSource still works)"
+        "ROOT not found — skipping fairship_to_cvf and plot_field_map (CovfieFieldSource still works)"
     )
 endif()

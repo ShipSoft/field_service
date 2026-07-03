@@ -36,6 +36,9 @@ An [automatic class reference](https://shipsoft.github.io/field_service/) is bui
   inspection and closure tests.
 - `tools/generate_constant_cvf` — synthetic uniform field-map generator for
   closure tests.
+- `tools/plot_field_map` — plot a `.cvf` as ROOT histograms and PDFs
+  (B_y vs z plus xz/yz/xy planes) over a user-given box. Built when ROOT is
+  available.
 
 ## Install with pixi
 
