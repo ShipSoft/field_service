@@ -1,0 +1,158 @@
+# SPDX-FileCopyrightText: 2026 CERN for the benefit of the SHiP Collaboration
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# Dev twin of ship-conda-recipes/recipes/field-service/recipe.yaml, built by
+# the build-local-channel pixi task so downstream dev environments can consume
+# this checkout as conda packages from a local file:// channel. Differences
+# from the release recipe: the source is this checkout instead of the release
+# tarball, and the C++ standard is fixed to 23 (the variant aegir uses)
+# instead of the root_cxx_standard variant matrix. Keep everything else in
+# lockstep when bumping versions or editing the release recipe.
+context:
+  version: "0.1.0"
+  cxx_standard: "23"
+
+recipe:
+  name: field-service
+  version: ${{ version }}
+
+source:
+  - path: ..
+  # covfie is FetchContent'd by upstream CMake; vendor it so the build
+  # stays offline. Pinned to the same tag the CMakeLists.txt uses.
+  - url: https://github.com/acts-project/covfie/archive/refs/tags/v0.15.6.tar.gz
+    sha256: ed22408f981692398408ffe04ff8e6230c022288552a83dbc2ad34b96003a84e
+    target_directory: covfie_src
+
+build:
+  number: 1
+
+outputs:
+  - staging:
+      name: field-service-build
+    build:
+      script: |
+        cmake ${CMAKE_ARGS} -S ${SRC_DIR} -B build \
+            -DCMAKE_CXX_STANDARD=${{ cxx_standard }} \
+            -DCMAKE_INSTALL_LIBDIR=lib \
+            -DBUILD_G4_ADAPTER=ON \
+            -DBUILD_TOOLS=ON \
+            -DBUILD_TESTING=OFF \
+            -DFETCHCONTENT_SOURCE_DIR_COVFIE=${SRC_DIR}/covfie_src
+        cmake --build build --parallel ${CPU_COUNT}
+        cmake --install build
+    requirements:
+      build:
+      - ${{ compiler('cxx') }}
+      - sysroot_linux-64 2.17.*
+      - cmake
+      - make
+      host:
+      - mp-units
+      - geant4
+      - root_base
+      - root_cxx_standard ${{ cxx_standard }}.*
+
+  - package:
+      name: field-service-core
+    inherit: field-service-build
+    build:
+      files:
+        - lib/libSHiPFieldService.so*
+        - include/FieldService/IFieldSource.h
+        - include/FieldService/CovfieFieldSource.h
+        - lib/cmake/SHiPFieldService/SHiPFieldServiceConfig.cmake
+        - lib/cmake/SHiPFieldService/SHiPFieldServiceConfigVersion.cmake
+        - lib/cmake/SHiPFieldService/SHiPFieldServiceTargets.cmake
+        - lib/cmake/SHiPFieldService/SHiPFieldServiceTargets-*.cmake
+    requirements:
+      run:
+        # find_dependency(mp-units) in SHiPFieldServiceConfig.cmake — needs
+        # mp-units in consumers' host env at configure time, which requires
+        # listing it here rather than relying on mp-units' run_exports alone.
+        - mp-units
+      run_exports:
+        - ${{ pin_subpackage('field-service-core', upper_bound='x.x') }}
+      # The shared staging host pulls geant4 + root_base for the g4-adapter and
+      # tools outputs; the core library doesn't link either, so suppress their
+      # run_exports here. mp-units run_export is kept (PUBLIC link).
+      ignore_run_exports:
+        from_package:
+          - geant4
+          - root_base
+          - root_cxx_standard
+    tests:
+      - script:
+          - test -f $PREFIX/lib/libSHiPFieldService.so
+          - test -f $PREFIX/include/FieldService/IFieldSource.h
+          - test -f $PREFIX/include/FieldService/CovfieFieldSource.h
+          - test -f $PREFIX/lib/cmake/SHiPFieldService/SHiPFieldServiceConfig.cmake
+          - test -f $PREFIX/lib/cmake/SHiPFieldService/SHiPFieldServiceTargets.cmake
+
+  - package:
+      name: field-service-g4
+    inherit: field-service-build
+    build:
+      files:
+        - include/FieldService/G4MagFieldAdapter.h
+        - lib/cmake/SHiPFieldService/SHiPFieldServiceG4AdapterTargets.cmake
+        - lib/cmake/SHiPFieldService/SHiPFieldServiceG4AdapterTargets-*.cmake
+    requirements:
+      run:
+        - ${{ pin_subpackage('field-service-core', exact=True) }}
+        # find_dependency(Geant4) is invoked from Config.cmake whenever the
+        # G4AdapterTargets file is present in the prefix.
+        - geant4
+      run_exports:
+        - ${{ pin_subpackage('field-service-g4', upper_bound='x.x') }}
+      # ROOT is staged for the tools output, not the g4 adapter.
+      ignore_run_exports:
+        from_package:
+          - root_base
+          - root_cxx_standard
+    tests:
+      - script:
+          - test -f $PREFIX/include/FieldService/G4MagFieldAdapter.h
+          - test -f $PREFIX/lib/cmake/SHiPFieldService/SHiPFieldServiceG4AdapterTargets.cmake
+
+  - package:
+      name: field-service-tools
+    inherit: field-service-build
+    build:
+      files:
+        - bin/cvf_to_text
+        - bin/generate_constant_cvf
+        - bin/fairship_to_cvf
+    requirements:
+      run:
+        - ${{ pin_subpackage('field-service-core', exact=True) }}
+      # Tools don't link Geant4; mp-units is pulled in transitively via the
+      # core sub-package, not directly by these binaries.
+      ignore_run_exports:
+        from_package:
+          - geant4
+          - mp-units
+    tests:
+      - script:
+          - test -f $PREFIX/bin/cvf_to_text
+          - test -f $PREFIX/bin/generate_constant_cvf
+          - test -f $PREFIX/bin/fairship_to_cvf
+
+  - package:
+      name: field-service
+    build:
+      # Metapackage: no files, just pulls in the three sub-packages.
+      files: []
+    requirements:
+      run:
+        - ${{ pin_subpackage('field-service-core', exact=True) }}
+        - ${{ pin_subpackage('field-service-g4', exact=True) }}
+        - ${{ pin_subpackage('field-service-tools', exact=True) }}
+
+about:
+  homepage: https://github.com/ShipSoft/field_service
+  repository: https://github.com/ShipSoft/field_service
+  summary: SHiP magnetic field service (framework-agnostic, covfie-backed)
+  license: LGPL-3.0-or-later
+  license_file: LICENSES/LGPL-3.0-or-later.txt
