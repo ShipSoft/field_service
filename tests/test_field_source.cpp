@@ -4,6 +4,8 @@
 
 #include "FieldService/CovfieFieldSource.h"
 
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <covfie/core/algebra/affine.hpp>
 #include <covfie/core/backend/primitive/array.hpp>
 #include <covfie/core/backend/transformer/affine.hpp>
@@ -16,7 +18,6 @@
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
-#include <gtest/gtest.h>
 
 // Writer chain uses nearest_neighbour so `view.at(...)` returns an lvalue ref
 // we can assign through during construction. The file is binary-compatible
@@ -66,26 +67,27 @@ std::filesystem::path WriteTinyConstantField() {
 
 }  // namespace
 
-TEST(CovfieFieldSource, RoundtripConstantField) {
+TEST_CASE("CovfieFieldSource.RoundtripConstantField", "[field_source]") {
     auto path = WriteTinyConstantField();
     auto eval = ship::loadCovfieField(path.string());
-    ASSERT_TRUE(eval);
+    REQUIRE(eval);
 
     using namespace mp_units::si;
+    using Catch::Matchers::WithinAbs;
 
     auto B = eval->at(0.0 * milli<metre>, 0.0 * milli<metre>, 0.0 * milli<metre>);
-    EXPECT_NEAR(B[0].numerical_value_in(tesla), 0.0, 1e-6);
-    EXPECT_NEAR(B[1].numerical_value_in(tesla), 1.5, 1e-6);
-    EXPECT_NEAR(B[2].numerical_value_in(tesla), 0.0, 1e-6);
+    CHECK_THAT(B[0].numerical_value_in(tesla), WithinAbs(0.0, 1e-6));
+    CHECK_THAT(B[1].numerical_value_in(tesla), WithinAbs(1.5, 1e-6));
+    CHECK_THAT(B[2].numerical_value_in(tesla), WithinAbs(0.0, 1e-6));
 
     // Off-centre — same constant field everywhere inside the box.
     B = eval->at(3.0 * milli<metre>, -4.0 * milli<metre>, 7.0 * milli<metre>);
-    EXPECT_NEAR(B[1].numerical_value_in(tesla), 1.5, 1e-6);
+    CHECK_THAT(B[1].numerical_value_in(tesla), WithinAbs(1.5, 1e-6));
 
     std::filesystem::remove(path);
 }
 
-TEST(CovfieFieldSource, SourceAggregatesRegions) {
+TEST_CASE("CovfieFieldSource.SourceAggregatesRegions", "[field_source]") {
     auto path = WriteTinyConstantField();
     std::vector<ship::CovfieFieldSource::MagnetConfig> magnets = {
         {"MagA", "MuonShield", path.string()},
@@ -93,12 +95,12 @@ TEST(CovfieFieldSource, SourceAggregatesRegions) {
     };
     ship::CovfieFieldSource src(std::move(magnets));
     auto const& regs = src.regions();
-    ASSERT_EQ(regs.size(), 2u);
-    EXPECT_EQ(regs[0].name, "MagA");
-    EXPECT_EQ(regs[0].volume_pattern, "MuonShield");
-    EXPECT_EQ(regs[1].volume_pattern, "Spectrometer");
-    ASSERT_TRUE(regs[0].field);
-    ASSERT_TRUE(regs[1].field);
+    REQUIRE(regs.size() == 2u);
+    CHECK(regs[0].name == "MagA");
+    CHECK(regs[0].volume_pattern == "MuonShield");
+    CHECK(regs[1].volume_pattern == "Spectrometer");
+    REQUIRE(regs[0].field);
+    REQUIRE(regs[1].field);
 
     std::filesystem::remove(path);
 }

@@ -23,7 +23,7 @@ cmake = ">=3.28"
 ninja = "*"
 cxx-compiler = "*"
 
-# covfie + GoogleTest are fetched at configure time via FetchContent.
+# covfie + Catch2 are fetched at configure time via FetchContent.
 git = "*"
 
 [activation]
