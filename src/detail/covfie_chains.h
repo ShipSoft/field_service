@@ -28,6 +28,8 @@
 #include <covfie/core/parameter_pack.hpp>
 #include <covfie/core/vector.hpp>
 #include <cstddef>
+#include <stdexcept>
+#include <string>
 #include <utility>
 #include <variant>
 
@@ -49,9 +51,26 @@ struct GridSpec {
     std::array<std::size_t, 3> n;
 };
 
+/// Throw if `spec` cannot produce a well-formed grid: every axis needs at least
+/// two samples (`n - 1` underflows for `n == 0` and divides by zero in
+/// `grid_pos`/the affine scale for `n == 1`) and a positive extent (`max > min`,
+/// otherwise the affine scale is non-positive or infinite).
+inline void validate(GridSpec const& spec) {
+    for (std::size_t i = 0; i < 3; ++i) {
+        if (spec.n[i] < 2) {
+            throw std::invalid_argument("GridSpec: axis " + std::to_string(i) +
+                                        " needs at least 2 samples");
+        }
+        if (!(spec.max[i] > spec.min[i])) {
+            throw std::invalid_argument("GridSpec: axis " + std::to_string(i) + " needs max > min");
+        }
+    }
+}
+
 /// Position of sample `i` on an axis with `n` samples spanning `[min, max]`.
 /// Must be used by writers so fill positions land exactly on the grid indices
-/// produced by the affine transform.
+/// produced by the affine transform. `n >= 2` is a precondition (see
+/// `validate`).
 [[nodiscard]] inline float grid_pos(float min, float max, std::size_t n, std::size_t i) {
     return min + static_cast<float>(i) * (max - min) / static_cast<float>(n - 1);
 }
@@ -59,6 +78,8 @@ struct GridSpec {
 /// Build an empty writer-chain field over `spec`, ready to be filled via
 /// `writer_field_t::view_t::at(x, y, z)` at `grid_pos` sample positions.
 [[nodiscard]] inline writer_field_t make_writer_field(GridSpec const& spec) {
+    validate(spec);
+
     covfie::algebra::affine<3> translation =
         covfie::algebra::affine<3>::translation(-spec.min[0], -spec.min[1], -spec.min[2]);
     covfie::algebra::affine<3> scaling = covfie::algebra::affine<3>::scaling(

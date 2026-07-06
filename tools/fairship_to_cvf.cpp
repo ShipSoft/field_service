@@ -27,6 +27,7 @@
 #include <cstddef>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <string>
 
@@ -72,6 +73,14 @@ int main(int argc, char** argv) {
     std::array<float, 3> const max{*rxMax * kCmToMm, *ryMax * kCmToMm, *rzMax * kCmToMm};
     std::array<float, 3> const spacing{*rdx * kCmToMm, *rdy * kCmToMm, *rdz * kCmToMm};
 
+    // The Range tree is defined to hold exactly one entry. Extra entries would
+    // be silently ignored and could describe a grid inconsistent with the one
+    // we build below, so reject them outright.
+    if (range_reader.Next()) {
+        std::cerr << "Range tree has more than one entry; expected exactly one\n";
+        return 1;
+    }
+
     std::array<std::size_t, 3> n{};
     for (std::size_t i = 0; i < 3; ++i) {
         if (!(spacing[i] > 0.0f) || !(max[i] > min[i])) {
@@ -81,6 +90,15 @@ int main(int argc, char** argv) {
         n[i] = static_cast<std::size_t>(std::lround((max[i] - min[i]) / spacing[i])) + 1;
         if (n[i] < 2) {
             std::cerr << "Invalid Range tree: need at least 2 samples per axis\n";
+            return 1;
+        }
+        // The extent must be an integer number of steps: otherwise lround()
+        // silently snaps the sample count and every grid position drifts off
+        // the values the Data tree was sampled at.
+        float const spanned = static_cast<float>(n[i] - 1) * spacing[i];
+        if (std::abs(spanned - (max[i] - min[i])) > 1e-2f * spacing[i]) {
+            std::cerr << "Invalid Range tree: axis " << i << " extent " << (max[i] - min[i])
+                      << " mm is not an integer multiple of spacing " << spacing[i] << " mm\n";
             return 1;
         }
     }
@@ -94,7 +112,22 @@ int main(int argc, char** argv) {
 
     TTreeReader data_reader("Data", in_file.get());
     TTreeReaderValue<float> Bx(data_reader, "Bx"), By(data_reader, "By"), Bz(data_reader, "Bz");
-    auto const expected_entries = static_cast<Long64_t>(Nx * Ny * Nz);
+    // Guard the sample-count product against std::size_t overflow before it is
+    // used for the entry-count check: a wrapped value could slip below the real
+    // entry count and pass validation, or drive a huge allocation.
+    std::size_t total_samples = 1;
+    for (std::size_t const ni : n) {
+        if (ni > std::numeric_limits<std::size_t>::max() / total_samples) {
+            std::cerr << "Grid too large: sample count overflows std::size_t\n";
+            return 1;
+        }
+        total_samples *= ni;
+    }
+    if (total_samples > static_cast<std::size_t>(std::numeric_limits<Long64_t>::max())) {
+        std::cerr << "Grid too large: sample count exceeds Long64_t\n";
+        return 1;
+    }
+    auto const expected_entries = static_cast<Long64_t>(total_samples);
     if (data_reader.GetEntries() != expected_entries) {
         std::cerr << "Data tree has " << data_reader.GetEntries() << " entries, expected "
                   << expected_entries << '\n';
