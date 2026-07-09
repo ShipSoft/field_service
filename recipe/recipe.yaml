@@ -50,6 +50,7 @@ outputs:
       - make
       host:
       - mp-units
+      - shipdatamodel
       - geant4
       - root_base
       - root_cxx_standard ${{ cxx_standard }}.*
@@ -68,10 +69,12 @@ outputs:
         - lib/cmake/SHiPFieldService/SHiPFieldServiceTargets-*.cmake
     requirements:
       run:
-        # find_dependency(mp-units) in SHiPFieldServiceConfig.cmake — needs
-        # mp-units in consumers' host env at configure time, which requires
-        # listing it here rather than relying on mp-units' run_exports alone.
+        # find_dependency(mp-units) and find_dependency(SHiPDataModel) in
+        # SHiPFieldServiceConfig.cmake — needed in consumers' host env at
+        # configure time, which requires listing them here rather than
+        # relying on their run_exports alone.
         - mp-units
+        - shipdatamodel
       run_exports:
         - ${{ pin_subpackage('field-service-core', upper_bound='x.x') }}
       # The shared staging host pulls geant4 + root_base for the g4-adapter and

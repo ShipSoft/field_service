@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include <SHiP/Units.hpp>
 #include <array>
 #include <memory>
-#include <mp-units/systems/si.h>
 #include <string>
 #include <vector>
 
@@ -18,8 +18,10 @@ namespace ship {
 /// any thread and allocation-free on the hot path.
 class IFieldEvaluator {
    public:
-    using pos_q = mp_units::quantity<mp_units::si::milli<mp_units::si::metre>, double>;
-    using field_q = mp_units::quantity<mp_units::si::tesla, double>;
+    // Aliases of the canonical ShipSoft quantity types (SHiP/Units.hpp);
+    // kept for source compatibility with existing implementations.
+    using pos_q = ship::Length;
+    using field_q = ship::MagneticField;
 
     virtual ~IFieldEvaluator() = default;
 
