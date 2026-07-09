@@ -11,6 +11,10 @@ platforms = ["linux-64"]
 # Required by CovfieFieldSource (find_package mp-units CONFIG REQUIRED).
 mp-units = "*"
 
+# Canonical ShipSoft unit vocabulary (SHiP::SHiPUnits, headers-only). Needs
+# the first shipdatamodel release that ships SHiP/Units.hpp.
+shipdatamodel = "*"
+
 # Required by the default BUILD_G4_ADAPTER=ON path.
 geant4 = ">=11.3"
 

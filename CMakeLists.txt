@@ -27,6 +27,9 @@ option(BUILD_TOOLS "Build the .cvf conversion / dump utilities" ON)
 # ----------------------------------------------------------------------------
 
 find_package(mp-units CONFIG REQUIRED)
+# Canonical ShipSoft quantity types (SHiP/Units.hpp, SHiP::SHiPUnits target);
+# headers-only, no ROOT linkage.
+find_package(SHiPDataModel CONFIG REQUIRED)
 
 cmake_path(GET mp-units_DIR PARENT_PATH _d)
 cmake_path(GET _d PARENT_PATH _d)
@@ -63,7 +66,7 @@ target_include_directories(
 
 target_link_libraries(
     SHiPFieldService
-    PUBLIC mp-units::mp-units
+    PUBLIC mp-units::mp-units SHiP::SHiPUnits
     PRIVATE covfie::core covfie::cpu
 )
 

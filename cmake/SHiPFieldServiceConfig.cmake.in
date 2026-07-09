@@ -14,6 +14,7 @@ set(_SHiPFS_saved_CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH}")
 list(APPEND CMAKE_PREFIX_PATH ${_SHiPFS_extra_prefixes})
 
 find_dependency(mp-units CONFIG REQUIRED)
+find_dependency(SHiPDataModel CONFIG REQUIRED)
 
 include("${CMAKE_CURRENT_LIST_DIR}/SHiPFieldServiceTargets.cmake")
 
