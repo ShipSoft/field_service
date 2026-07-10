@@ -6,7 +6,9 @@
 
 include(CMakeFindDependencyMacro)
 
-set(_SHiPFS_extra_prefixes "@_mp_units_prefix@")
+# PATH_VARS-expanded: prefix-relative when mp-units lives inside the install
+# prefix (relocatable, e.g. conda), absolute only for out-of-prefix dev setups.
+set(_SHiPFS_extra_prefixes "@PACKAGE__mp_units_prefix@")
 list(FILTER _SHiPFS_extra_prefixes EXCLUDE REGEX "^$")
 set(_SHiPFS_saved_CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH}")
 list(APPEND CMAKE_PREFIX_PATH ${_SHiPFS_extra_prefixes})
