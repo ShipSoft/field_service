@@ -154,6 +154,7 @@ configure_package_config_file(
     cmake/SHiPFieldServiceConfig.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/SHiPFieldServiceConfig.cmake
     INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/SHiPFieldService
+    PATH_VARS _mp_units_prefix
 )
 
 write_basic_package_version_file(
