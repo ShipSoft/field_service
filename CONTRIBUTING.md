@@ -17,10 +17,11 @@ Thank you for your interest in contributing. As part of the SHiP Collaboration, 
    pixi run test
    ```
    See `pixi.toml` for the full list of tasks (`configure`, `build`, `install`, `test`, `clean`).
-3. **Pre-commit hooks**: we enforce style and licensing via `pre-commit`. Install both the pre-commit and commit-msg hooks:
+3. **Pre-commit hooks**: we enforce style and licensing via [`prek`](https://github.com/j178/prek) (a drop-in `pre-commit` replacement). The hook tools come from the pixi `lint` environment, so versions are tracked in `pixi.lock` and run identically everywhere. Install the pre-commit and commit-msg hooks once:
    ```bash
-   pixi run -e dev pre-commit install --hook-type pre-commit --hook-type commit-msg
+   pixi run install-hooks
    ```
+   Run all hooks manually at any time with `pixi run lint`.
 4. **Branching**: create a feature branch for your changes.
 5. **Coding standards**:
    - C++20; style enforced by `clang-format` (`.clang-format`) and `cpplint` (`CPPLINT.cfg`).
