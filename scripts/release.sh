@@ -16,9 +16,10 @@ Usage: scripts/release.sh <version>
 The script must be run from a clean working tree. It will:
   1. bump the VERSION line in CMakeLists.txt
   2. bump version and date-released in CITATION.cff (if present)
-  3. regenerate CHANGELOG.md with `git cliff --tag v<version>`
-  4. create commit `chore(release): v<version>`
-  5. create annotated tag `v<version>`
+  3. bump the recipe context.version in recipe/recipe.yaml (if present)
+  4. regenerate CHANGELOG.md with `git cliff --tag v<version>`
+  5. create commit `chore(release): v<version>`
+  6. create annotated tag `v<version>`
 
 Pushing is left to the operator:
   git push origin <branch> && git push origin v<version>
@@ -85,11 +86,32 @@ if [[ -f "${CITATION_FILE}" ]]; then
     sed -i -E "s/^date-released: .*/date-released: \"$(date -u +%Y-%m-%d)\"/" "${CITATION_FILE}"
 fi
 
+# Bump the recipe's context.version so the conda package version stays in
+# lockstep with the tag. field_service ships a multi-output conda recipe
+# (recipe/recipe.yaml, a dev twin of ship-conda-recipes/recipes/field-service)
+# rather than a pixi [package] section -- see the pixi-build gap note in
+# pixi.toml. The sole quoted-semver line is context.version; the anchor guards
+# against matching the `version: ${{ version }}` template lines. Remember to
+# bump the release recipe in ship-conda-recipes to match.
+RECIPE_FILE="recipe/recipe.yaml"
+if [[ -f "${RECIPE_FILE}" ]] && grep -qE '^  version: "[0-9]+\.[0-9]+\.[0-9]+"' "${RECIPE_FILE}"; then
+    sed -i -E "s/^(  version: )\"[0-9]+\.[0-9]+\.[0-9]+\"/\1\"${VERSION}\"/" "${RECIPE_FILE}"
+    if ! grep -qE "^  version: \"${VERSION//./\\.}\"$" "${RECIPE_FILE}"; then
+        echo "error: failed to update version in ${RECIPE_FILE}" >&2
+        git checkout -- "${CMAKE_FILE}" "${RECIPE_FILE}"
+        [[ -f "${CITATION_FILE}" ]] && git checkout -- "${CITATION_FILE}"
+        exit 70
+    fi
+fi
+
 git cliff --tag "${TAG}" -o CHANGELOG.md
 
 git add "${CMAKE_FILE}" CHANGELOG.md
 if [[ -f "${CITATION_FILE}" ]]; then
     git add "${CITATION_FILE}"
+fi
+if [[ -f "${RECIPE_FILE}" ]] && grep -qE "^  version: \"${VERSION//./\\.}\"$" "${RECIPE_FILE}"; then
+    git add "${RECIPE_FILE}"
 fi
 git commit -m "chore(release): ${TAG}"
 git tag -a "${TAG}" -m "Release ${TAG}"
