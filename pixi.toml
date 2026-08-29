@@ -66,7 +66,7 @@ build-local-channel = "rattler-build build --recipe recipe/recipe.yaml --output-
 [feature.lint.dependencies]
 prek = "*"
 python = ">=3.11"
-clang-format = "22.*"
+clang-format = "23.*"
 codespell = "*"
 reuse = "*"
 cffconvert = "*"
