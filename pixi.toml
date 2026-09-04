@@ -18,6 +18,13 @@ shipdatamodel = "*"
 # Required by the default BUILD_G4_ADAPTER=ON path.
 geant4 = ">=11.3"
 
+# Geant4Config.cmake does find_dependency(EXPAT 2.8.1), which needs the headers
+# and the libexpat.so dev symlink from the `expat` package. geant4's qt_* builds
+# only depend on `libexpat` (the runtime .so.1), so declare it explicitly --
+# otherwise CMake falls back to the system expat and configure fails. Drop this
+# once conda-forge/geant4-feedstock restores the `expat` dependency.
+expat = "*"
+
 # Required by tools/fairship_to_cvf (only built when ROOT is detected).
 root = ">=6.36"
 

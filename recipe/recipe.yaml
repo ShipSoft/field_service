@@ -52,6 +52,9 @@ outputs:
       - mp-units
       - shipdatamodel
       - geant4
+      # Geant4Config.cmake's find_dependency(EXPAT 2.8.1) needs the expat
+      # headers; geant4's qt_* builds only pull in libexpat at runtime.
+      - expat
       - root_base
       - root_cxx_standard ${{ cxx_standard }}.*
 
