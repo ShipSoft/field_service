@@ -66,24 +66,56 @@ if git rev-parse --verify --quiet "refs/tags/${TAG}" >/dev/null; then
     exit 65
 fi
 
+# Everything below mutates the working tree. Any failure -- a read-only file, a
+# `git cliff` error, an interrupted commit -- must leave the repository as we
+# found it, so record each file as it is first touched and restore the lot on a
+# non-zero exit. `git checkout HEAD --` (rather than `git checkout --`) also
+# resets the index, covering failures after the files have been staged.
+RELEASE_FILES=()
+restore_release_files() {
+    local status=$?
+    if [[ ${status} -eq 0 ]]; then
+        return 0
+    fi
+    local file
+    for file in ${RELEASE_FILES[@]+"${RELEASE_FILES[@]}"}; do
+        # Best effort, one file at a time: a path git cannot restore (an
+        # as-yet-untracked CHANGELOG.md, say) must not block the others.
+        git checkout HEAD -- "${file}" 2>/dev/null || true
+    done
+    return 0
+}
+trap restore_release_files EXIT
+
 CMAKE_FILE="CMakeLists.txt"
 if ! grep -qE '^[[:space:]]*VERSION[[:space:]]+[0-9]+\.[0-9]+\.[0-9]+' "${CMAKE_FILE}"; then
     echo "error: could not find VERSION line in ${CMAKE_FILE}" >&2
     exit 70
 fi
 
+RELEASE_FILES+=("${CMAKE_FILE}")
 sed -i -E "s/^([[:space:]]*VERSION[[:space:]]+)[0-9]+\.[0-9]+\.[0-9]+/\1${VERSION}/" "${CMAKE_FILE}"
 
 if ! grep -qE "^[[:space:]]*VERSION[[:space:]]+${VERSION//./\\.}([[:space:]]|$)" "${CMAKE_FILE}"; then
     echo "error: failed to update VERSION in ${CMAKE_FILE}" >&2
-    git checkout -- "${CMAKE_FILE}"
     exit 70
 fi
 
+# A present-but-unbumpable CITATION.cff is an error, not a silent no-op: the
+# release commit would otherwise stage a stale citation version.
 CITATION_FILE="CITATION.cff"
 if [[ -f "${CITATION_FILE}" ]]; then
+    if ! grep -qE '^version: ' "${CITATION_FILE}"; then
+        echo "error: could not find version line in ${CITATION_FILE}" >&2
+        exit 70
+    fi
+    RELEASE_FILES+=("${CITATION_FILE}")
     sed -i -E "s/^version: .*/version: ${VERSION}/" "${CITATION_FILE}"
     sed -i -E "s/^date-released: .*/date-released: \"$(date -u +%Y-%m-%d)\"/" "${CITATION_FILE}"
+    if ! grep -qE "^version: ${VERSION//./\\.}$" "${CITATION_FILE}"; then
+        echo "error: failed to update version in ${CITATION_FILE}" >&2
+        exit 70
+    fi
 fi
 
 # Bump the recipe's context.version so the conda package version stays in
@@ -91,29 +123,35 @@ fi
 # (recipe/recipe.yaml, a dev twin of ship-conda-recipes/recipes/field-service)
 # rather than a pixi [package] section -- see the pixi-build gap note in
 # pixi.toml. The sole quoted-semver line is context.version; the anchor guards
-# against matching the `version: ${{ version }}` template lines. Remember to
-# bump the release recipe in ship-conda-recipes to match.
+# against matching the `version: ${{ version }}` template lines. Requiring
+# exactly one match is what makes that anchor safe without a YAML parser: a
+# reformatted recipe, or a second quoted version key at the same indent, fails
+# loudly here instead of tagging a release with a stale conda version. Remember
+# to bump the release recipe in ship-conda-recipes to match.
 RECIPE_FILE="recipe/recipe.yaml"
-if [[ -f "${RECIPE_FILE}" ]] && grep -qE '^  version: "[0-9]+\.[0-9]+\.[0-9]+"' "${RECIPE_FILE}"; then
-    sed -i -E "s/^(  version: )\"[0-9]+\.[0-9]+\.[0-9]+\"/\1\"${VERSION}\"/" "${RECIPE_FILE}"
+if [[ -f "${RECIPE_FILE}" ]]; then
+    RECIPE_MATCHES="$(grep -cE '^  version: "[0-9]+\.[0-9]+\.[0-9]+"$' "${RECIPE_FILE}" || true)"
+    if [[ "${RECIPE_MATCHES}" -ne 1 ]]; then
+        echo "error: expected exactly one context.version line in ${RECIPE_FILE} (found ${RECIPE_MATCHES})" >&2
+        exit 70
+    fi
+    RELEASE_FILES+=("${RECIPE_FILE}")
+    sed -i -E "s/^(  version: )\"[0-9]+\.[0-9]+\.[0-9]+\"$/\1\"${VERSION}\"/" "${RECIPE_FILE}"
     if ! grep -qE "^  version: \"${VERSION//./\\.}\"$" "${RECIPE_FILE}"; then
         echo "error: failed to update version in ${RECIPE_FILE}" >&2
-        git checkout -- "${CMAKE_FILE}" "${RECIPE_FILE}"
-        [[ -f "${CITATION_FILE}" ]] && git checkout -- "${CITATION_FILE}"
         exit 70
     fi
 fi
 
+RELEASE_FILES+=("CHANGELOG.md")
 git cliff --tag "${TAG}" -o CHANGELOG.md
 
-git add "${CMAKE_FILE}" CHANGELOG.md
-if [[ -f "${CITATION_FILE}" ]]; then
-    git add "${CITATION_FILE}"
-fi
-if [[ -f "${RECIPE_FILE}" ]] && grep -qE "^  version: \"${VERSION//./\\.}\"$" "${RECIPE_FILE}"; then
-    git add "${RECIPE_FILE}"
-fi
+git add "${RELEASE_FILES[@]}"
 git commit -m "chore(release): ${TAG}"
+# Committed: those files are no longer ours to restore, so a failing `git tag`
+# must not roll the release commit's contents back.
+trap - EXIT
+
 git tag -a "${TAG}" -m "Release ${TAG}"
 
 cat <<EOF
