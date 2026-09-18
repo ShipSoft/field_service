@@ -74,7 +74,7 @@ ctest --test-dir build
 
 ## Develop
 
-Install the pre-commit hooks (covers `clang-format`, `cpplint`, `gersemi`,
+Install the pre-commit hooks (covers `clang-format`, `gersemi`,
 `reuse`, `codespell`, conventional-commit validation, and CITATION.cff
 checks):
 
