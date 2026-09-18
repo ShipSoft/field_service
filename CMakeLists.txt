@@ -18,6 +18,9 @@ endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# clang-tidy replays these commands; see .github/workflows/clang-tidy.yml.
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 option(BUILD_SHARED_LIBS "Build shared libraries by default" ON)
 option(BUILD_G4_ADAPTER "Build the optional Geant4 adapter component" ON)
 option(BUILD_TOOLS "Build the .cvf conversion / dump utilities" ON)

@@ -24,7 +24,12 @@ Thank you for your interest in contributing. As part of the SHiP Collaboration, 
    Run all hooks manually at any time with `pixi run lint`.
 4. **Branching**: create a feature branch for your changes.
 5. **Coding standards**:
-   - C++20; style enforced by `clang-format` (`.clang-format`) and `cpplint` (`CPPLINT.cfg`).
+   - C++20; formatting enforced by `clang-format` (`.clang-format`).
+   - C++ is checked against the [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines)
+     by `clang-tidy`, using the shared `.clang-tidy` synced from
+     [ShipSoft/.github](https://github.com/ShipSoft/.github/tree/main/sync). CI only
+     fails on findings that land on lines your patch changes, so you are never asked
+     to clean up code you did not touch. Check locally with `pixi run clang-tidy-diff`.
    - CMake formatting enforced by `gersemi`.
    - Every new file must carry an SPDX header (REUSE-compliant; verified by `reuse lint`).
 6. **Commits**: we follow [Conventional Commits](https://www.conventionalcommits.org/), validated by [`committed`](https://github.com/crate-ci/committed). Allowed types are listed in `committed.toml` (`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`).
