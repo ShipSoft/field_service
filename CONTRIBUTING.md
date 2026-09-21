@@ -27,9 +27,19 @@ Thank you for your interest in contributing. As part of the SHiP Collaboration, 
    - C++20; formatting enforced by `clang-format` (`.clang-format`).
    - C++ is checked against the [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines)
      by `clang-tidy`, using the shared `.clang-tidy` synced from
-     [ShipSoft/.github](https://github.com/ShipSoft/.github/tree/main/sync). CI only
-     fails on findings that land on lines your patch changes, so you are never asked
-     to clean up code you did not touch. Check locally with `pixi run clang-tidy-diff`.
+     [ShipSoft/.github](https://github.com/ShipSoft/.github/tree/main/sync). Only
+     findings on lines your patch changes are reported, so you are never asked to
+     clean up code you did not touch. Whether those findings fail the build or are
+     reported for information is set by `fail-on-new` in
+     `.github/workflows/clang-tidy.yml`. Check the sources you changed locally
+     with:
+     ```bash
+     pixi run clang-tidy-diff
+     ```
+     That task cannot see a header-only change, because headers have no compile
+     command of their own; CI reaches them through the sources that include them.
+     After touching a header, run the whole tree with `pixi run clang-tidy` or
+     leave it to CI.
    - CMake formatting enforced by `gersemi`.
    - Every new file must carry an SPDX header (REUSE-compliant; verified by `reuse lint`).
 6. **Commits**: we follow [Conventional Commits](https://www.conventionalcommits.org/), validated by [`committed`](https://github.com/crate-ci/committed). Allowed types are listed in `committed.toml` (`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`).
