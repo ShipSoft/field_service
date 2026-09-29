@@ -12,11 +12,18 @@
 namespace ship {
 
 /// Build an `IFieldEvaluator` backed by a covfie `.cvf` file (CPU backend,
-/// trilinear interpolation, per-thread view). Bare filenames are resolved
-/// against `$SHIPFIELD_ROOT/share/field/`.
+/// trilinear interpolation, clamped at the boundary). Bare filenames are
+/// resolved against `$SHIPFIELD_ROOT/share/field/`.
+///
+/// \deprecated `.cvf` is covfie's internal serialisation and changes with
+/// covfie versions. Store maps in the SHiP field-map format
+/// (docs/field_map_format.md) and load them with `FieldMapSource` from the
+/// MapIO component instead. `.cvf` support will be removed in a later release.
 [[nodiscard]] std::shared_ptr<IFieldEvaluator> loadCovfieField(std::string const& cvf_path);
 
 /// Concrete `IFieldSource` aggregating one covfie-backed evaluator per magnet.
+///
+/// \deprecated Reads `.cvf` files; see `loadCovfieField`.
 class CovfieFieldSource final : public IFieldSource {
    public:
     struct MagnetConfig {

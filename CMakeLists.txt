@@ -23,7 +23,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(BUILD_SHARED_LIBS "Build shared libraries by default" ON)
 option(BUILD_G4_ADAPTER "Build the optional Geant4 adapter component" ON)
-option(BUILD_TOOLS "Build the .cvf conversion / dump utilities" ON)
+option(BUILD_MAPIO "Build the field-map file I/O component (needs ROOT)" ON)
+option(BUILD_TOOLS "Build the field-map conversion / dump utilities" ON)
 
 # ----------------------------------------------------------------------------
 # Dependencies
@@ -58,7 +59,7 @@ FetchContent_MakeAvailable(covfie)
 # Core library (no Geant4 dependency)
 # ----------------------------------------------------------------------------
 
-add_library(SHiPFieldService src/CovfieFieldSource.cpp)
+add_library(SHiPFieldService src/CovfieFieldSource.cpp src/FieldMap.cpp)
 
 target_include_directories(
     SHiPFieldService
@@ -72,6 +73,34 @@ target_link_libraries(
     PUBLIC mp-units::mp-units SHiP::SHiPUnits
     PRIVATE covfie::core covfie::cpu
 )
+
+# ----------------------------------------------------------------------------
+# Optional MapIO component: reader/writer for the SHiP field-map format
+# (docs/field_map_format.md). Separate from the core library so that core
+# stays free of ROOT.
+# ----------------------------------------------------------------------------
+
+if(BUILD_MAPIO)
+    find_package(ROOT 6.36 REQUIRED COMPONENTS ROOTNTuple)
+
+    add_library(SHiPFieldServiceMapIO src/FieldMapIO.cpp)
+    set_target_properties(SHiPFieldServiceMapIO PROPERTIES EXPORT_NAME MapIO)
+    target_include_directories(
+        SHiPFieldServiceMapIO
+        PUBLIC
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+            $<INSTALL_INTERFACE:include>
+    )
+    target_compile_definitions(
+        SHiPFieldServiceMapIO
+        PRIVATE SHIPFIELD_VERSION="${PROJECT_VERSION}"
+    )
+    target_link_libraries(
+        SHiPFieldServiceMapIO
+        PUBLIC SHiPFieldService
+        PRIVATE ROOT::ROOTNTuple ROOT::RIO ROOT::Core
+    )
+endif()
 
 # ----------------------------------------------------------------------------
 # Optional Geant4 adapter
@@ -151,6 +180,21 @@ if(BUILD_G4_ADAPTER)
     install(
         EXPORT SHiPFieldServiceG4AdapterTargets
         FILE SHiPFieldServiceG4AdapterTargets.cmake
+        NAMESPACE SHiPFieldService::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/SHiPFieldService
+    )
+endif()
+
+if(BUILD_MAPIO)
+    install(
+        TARGETS SHiPFieldServiceMapIO
+        EXPORT SHiPFieldServiceMapIOTargets
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    )
+    install(
+        EXPORT SHiPFieldServiceMapIOTargets
+        FILE SHiPFieldServiceMapIOTargets.cmake
         NAMESPACE SHiPFieldService::
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/SHiPFieldService
     )
