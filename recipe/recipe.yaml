@@ -66,6 +66,7 @@ outputs:
         - lib/libSHiPFieldService.so*
         - include/FieldService/IFieldSource.h
         - include/FieldService/CovfieFieldSource.h
+        - include/FieldService/FieldMap.h
         - lib/cmake/SHiPFieldService/SHiPFieldServiceConfig.cmake
         - lib/cmake/SHiPFieldService/SHiPFieldServiceConfigVersion.cmake
         - lib/cmake/SHiPFieldService/SHiPFieldServiceTargets.cmake
@@ -93,8 +94,33 @@ outputs:
           - test -f $PREFIX/lib/libSHiPFieldService.so
           - test -f $PREFIX/include/FieldService/IFieldSource.h
           - test -f $PREFIX/include/FieldService/CovfieFieldSource.h
+          - test -f $PREFIX/include/FieldService/FieldMap.h
           - test -f $PREFIX/lib/cmake/SHiPFieldService/SHiPFieldServiceConfig.cmake
           - test -f $PREFIX/lib/cmake/SHiPFieldService/SHiPFieldServiceTargets.cmake
+
+  - package:
+      name: field-service-mapio
+    inherit: field-service-build
+    build:
+      files:
+        - lib/libSHiPFieldServiceMapIO.so*
+        - include/FieldService/FieldMapIO.h
+        - lib/cmake/SHiPFieldService/SHiPFieldServiceMapIOTargets.cmake
+        - lib/cmake/SHiPFieldService/SHiPFieldServiceMapIOTargets-*.cmake
+    requirements:
+      run:
+        - ${{ pin_subpackage('field-service-core', exact=True) }}
+      run_exports:
+        - ${{ pin_subpackage('field-service-mapio', upper_bound='x.x') }}
+      # Links ROOT (kept via root_base's run_exports), not Geant4.
+      ignore_run_exports:
+        from_package:
+          - geant4
+    tests:
+      - script:
+          - test -f $PREFIX/lib/libSHiPFieldServiceMapIO.so
+          - test -f $PREFIX/include/FieldService/FieldMapIO.h
+          - test -f $PREFIX/lib/cmake/SHiPFieldService/SHiPFieldServiceMapIOTargets.cmake
 
   - package:
       name: field-service-g4
@@ -127,12 +153,13 @@ outputs:
     inherit: field-service-build
     build:
       files:
-        - bin/cvf_to_text
-        - bin/generate_constant_cvf
-        - bin/fairship_to_cvf
+        - bin/fieldmap_dump
+        - bin/generate_constant_fieldmap
+        - bin/fairship_to_fieldmap
+        - bin/plot_field_map
     requirements:
       run:
-        - ${{ pin_subpackage('field-service-core', exact=True) }}
+        - ${{ pin_subpackage('field-service-mapio', exact=True) }}
       # Tools don't link Geant4; mp-units is pulled in transitively via the
       # core sub-package, not directly by these binaries.
       ignore_run_exports:
@@ -141,18 +168,20 @@ outputs:
           - mp-units
     tests:
       - script:
-          - test -f $PREFIX/bin/cvf_to_text
-          - test -f $PREFIX/bin/generate_constant_cvf
-          - test -f $PREFIX/bin/fairship_to_cvf
+          - test -f $PREFIX/bin/fieldmap_dump
+          - test -f $PREFIX/bin/generate_constant_fieldmap
+          - test -f $PREFIX/bin/fairship_to_fieldmap
+          - test -f $PREFIX/bin/plot_field_map
 
   - package:
       name: field-service
     build:
-      # Metapackage: no files, just pulls in the three sub-packages.
+      # Metapackage: no files, just pulls in the four sub-packages.
       files: []
     requirements:
       run:
         - ${{ pin_subpackage('field-service-core', exact=True) }}
+        - ${{ pin_subpackage('field-service-mapio', exact=True) }}
         - ${{ pin_subpackage('field-service-g4', exact=True) }}
         - ${{ pin_subpackage('field-service-tools', exact=True) }}
 

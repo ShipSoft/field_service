@@ -2,17 +2,19 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// plot_field_map — plot a covfie .cvf field map as ROOT histograms and PDFs.
+// plot_field_map — plot a field map (docs/field_map_format.md) as ROOT
+// histograms and PDFs.
 //
 // Usage:
-//   plot_field_map <input.cvf> <out.root> <xMin> <xMax> <yMin> <yMax> <zMin> <zMax>
+//   plot_field_map <input.root> <map> <out.root> [<xMin> <xMax> <yMin> <yMax> <zMin> <zMax>]
 //
-// All positions in mm. Produces B_y vs z along the beam axis plus B_y in the
-// xz-, yz- and central xy-planes, written to <out.root> with one PDF per plot
-// alongside it. Plot ranges are command-line arguments because grid extents
-// cannot be introspected from a loaded .cvf (see cvf_to_text.cpp).
+// All positions in mm, in the map's own frame. Produces B_y vs z along the
+// beam axis plus B_y in the xz-, yz- and central xy-planes, written to
+// <out.root> with one PDF per plot alongside it. The plot range defaults to
+// the map's grid, reflected on mirrored axes.
 
-#include "FieldService/CovfieFieldSource.h"
+#include "FieldService/FieldMap.h"
+#include "FieldService/FieldMapIO.h"
 #include "FieldService/IFieldSource.h"
 
 #include <TCanvas.h>
@@ -21,6 +23,7 @@
 #include <TH2F.h>
 
 #include <array>
+#include <cstddef>
 #include <exception>
 #include <filesystem>
 #include <functional>
@@ -55,44 +58,59 @@ void fillBy(TH2F& h, IFieldEvaluator const& eval,
 
 void usage(char const* prog) {
     std::cerr << "Usage: " << prog
-              << " <input.cvf> <out.root> <xMin> <xMax> <yMin> <yMax> <zMin> <zMax>\n"
-              << "       Positions in mm. Writes B_y plots to <out.root> and one PDF per\n"
-              << "       plot next to it. Outside the mapped region the evaluator clamps\n"
-              << "       to the boundary value — a plateau beyond the map bounds is a\n"
-              << "       plotting artefact, not physical fringe field.\n";
+              << " <input.root> <map> <out.root> [<xMin> <xMax> <yMin> <yMax> <zMin> <zMax>]\n"
+              << "       Positions in mm; the range defaults to the map's grid. Writes B_y\n"
+              << "       plots to <out.root> and one PDF per plot next to it. Outside the\n"
+              << "       mapped region the evaluator clamps to the boundary value — a\n"
+              << "       plateau beyond the map bounds is a plotting artefact, not physical\n"
+              << "       fringe field.\n";
 }
 
 }  // namespace
 
 int main(int argc, char* argv[]) {
-    if (argc != 9) {
+    if (argc != 4 && argc != 10) {
         usage(argv[0]);
         return 1;
     }
-    std::string const cvf_path = argv[1];
-    std::string const out_path = argv[2];
-    double xMin, xMax, yMin, yMax, zMin, zMax;
+    std::string const map_path = argv[1];
+    std::string const map_name = argv[2];
+    std::string const out_path = argv[3];
+
+    std::shared_ptr<IFieldEvaluator> eval;
+    ship::FieldMapGrid grid;
+    ship::FieldMapSymmetry symmetry;
     try {
-        xMin = std::stod(argv[3]);
-        xMax = std::stod(argv[4]);
-        yMin = std::stod(argv[5]);
-        yMax = std::stod(argv[6]);
-        zMin = std::stod(argv[7]);
-        zMax = std::stod(argv[8]);
-    } catch (std::exception const&) {
-        usage(argv[0]);
-        return 1;
-    }
-    if (xMin >= xMax || yMin >= yMax || zMin >= zMax) {
-        std::cerr << "error: each min must be smaller than the corresponding max\n";
+        auto map = ship::readFieldMap(map_path, map_name);
+        grid = map.grid;
+        symmetry = map.symmetry;
+        eval = ship::makeFieldEvaluator(map);
+    } catch (std::exception const& e) {
+        std::cerr << "error: " << e.what() << '\n';
         return 1;
     }
 
-    std::shared_ptr<IFieldEvaluator> eval;
-    try {
-        eval = ship::loadCovfieField(cvf_path);
-    } catch (std::exception const& e) {
-        std::cerr << "error: " << e.what() << '\n';
+    // Grid extents, reflected on mirrored axes; overridden by the arguments.
+    std::array<double, 3> lo{}, hi{};
+    for (std::size_t a = 0; a < 3; ++a) {
+        lo[a] = symmetry.mirror[a] ? -grid.max[a] : grid.min[a];
+        hi[a] = grid.max[a];
+    }
+    if (argc == 10) {
+        try {
+            for (std::size_t a = 0; a < 3; ++a) {
+                lo[a] = std::stod(argv[4 + 2 * a]);
+                hi[a] = std::stod(argv[5 + 2 * a]);
+            }
+        } catch (std::exception const&) {
+            usage(argv[0]);
+            return 1;
+        }
+    }
+    auto const [xMin, yMin, zMin] = lo;
+    auto const [xMax, yMax, zMax] = hi;
+    if (xMin >= xMax || yMin >= yMax || zMin >= zMax) {
+        std::cerr << "error: each min must be smaller than the corresponding max\n";
         return 1;
     }
 

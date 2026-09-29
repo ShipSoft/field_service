@@ -25,7 +25,7 @@ geant4 = ">=11.3"
 # once conda-forge/geant4-feedstock restores the `expat` dependency.
 expat = "*"
 
-# Required by tools/fairship_to_cvf (only built when ROOT is detected).
+# Required by the MapIO component (field-map file I/O) and the tools.
 root = ">=6.36"
 
 # Build toolchain.

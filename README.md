@@ -12,11 +12,20 @@ SPDX-License-Identifier: LGPL-3.0-or-later
 Framework-agnostic C++20 library exposing the SHiP magnetic field maps to
 simulation (aegir) and reconstruction.
 
-The library wraps [covfie](https://github.com/acts-project/covfie) for storage
-and interpolation of regular-grid field maps. A small optional Geant4 adapter
-(`G4MagFieldAdapter`) is built when `BUILD_G4_ADAPTER` is enabled; the core
-library has no Geant4 dependency, so reconstruction can consume it without
-pulling Geant4 in.
+Maps are stored in the [SHiP field-map format](docs/field_map_format.md), a
+versioned ROOT RNTuple layout. The library evaluates them with
+[covfie](https://github.com/acts-project/covfie) (trilinear interpolation on a
+regular grid).
+
+The library has three parts:
+
+- The core library (`SHiPFieldService`) builds evaluators from in-memory maps. It
+  depends on neither ROOT nor Geant4, so reconstruction can use it without
+  pulling either in.
+- The MapIO component (`SHiPFieldService::MapIO`, `BUILD_MAPIO`) reads and writes map
+  files and needs ROOT.
+- The G4Adapter component (`BUILD_G4_ADAPTER`) is a small Geant4 adapter,
+  `G4MagFieldAdapter`.
 
 ## Documentation
 
@@ -24,21 +33,26 @@ An [automatic class reference](https://shipsoft.github.io/field_service/) is bui
 
 ## Layout
 
-- `include/FieldService/IFieldSource.h` — interface (point-query evaluator,
+- `docs/field_map_format.md`: specification of the field-map file format.
+- `include/FieldService/IFieldSource.h`: interface (point-query evaluator,
   list of named regions tagged by host-geometry volume name).
-- `include/FieldService/CovfieFieldSource.h` + `src/CovfieFieldSource.cpp` —
-  concrete source that loads one `.cvf` file per magnet via covfie.
-- `include/FieldService/G4MagFieldAdapter.h` — Geant4 adapter, built when
+- `include/FieldService/FieldMap.h`: in-memory map (grid, symmetry, values,
+  provenance) and `makeFieldEvaluator`. Core, no ROOT.
+- `include/FieldService/FieldMapIO.h`: read and write map files, and
+  `FieldMapSource`, which loads one map per magnet. MapIO component.
+- `include/FieldService/CovfieFieldSource.h`: deprecated source reading covfie
+  `.cvf` files, kept for one release while consumers move to
+  `FieldMapSource`.
+- `include/FieldService/G4MagFieldAdapter.h`: Geant4 adapter, built when
   `BUILD_G4_ADAPTER=ON`.
-- `tools/fairship_to_cvf` — convert FairShip's legacy ROOT field-map format
-  to covfie `.cvf`. Built when ROOT is available.
-- `tools/cvf_to_text` — dump a `.cvf` to whitespace-separated text for
-  inspection and closure tests.
-- `tools/generate_constant_cvf` — synthetic uniform field-map generator for
-  closure tests.
-- `tools/plot_field_map` — plot a `.cvf` as ROOT histograms and PDFs
-  (B_y vs z plus xz/yz/xy planes) over a user-given box. Built when ROOT is
-  available.
+- `tools/` (built with MapIO):
+  - `fairship_to_fieldmap` converts FairShip's legacy ROOT field-map format;
+    use `--symmetry quadrant_dipole` for quadrant-symmetric maps.
+  - `fieldmap_dump` prints map metadata, or evaluates a map at points read
+    from stdin.
+  - `generate_constant_fieldmap` writes a uniform map for closure tests.
+  - `plot_field_map` plots a map as ROOT histograms and PDFs (B_y vs z plus
+    xz/yz/xy planes).
 
 ## Install with pixi
 
@@ -86,8 +100,10 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full workflow.
 
 ## Use from aegir
 
-Aegir consumes this via `find_package(SHiPFieldService REQUIRED COMPONENTS Core
+Aegir consumes this via `find_package(SHiPFieldService REQUIRED COMPONENTS
 G4Adapter)`. The aegir provider plugin `field_covfie_provider` constructs a
 `ship::CovfieFieldSource` from jsonnet config and publishes it as a phlex Job
 product; the aegir Geant4 module installs a per-magnet `G4FieldManager` on each
-matching logical volume via the adapter.
+matching logical volume via the adapter. Switching the provider to
+`ship::FieldMapSource` (component `MapIO`) replaces the `.cvf` files with
+field-map files.
