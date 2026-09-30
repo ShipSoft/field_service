@@ -10,6 +10,7 @@
 #include <array>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
+#include <limits>
 #include <stdexcept>
 
 namespace {
@@ -68,6 +69,14 @@ TEST_CASE("FieldMap.ValidateRejectsMalformedMaps", "[field_map]") {
 
     bad = m;
     bad.symmetry.parity[4] = 0;
+    CHECK_THROWS_AS(ship::validate(bad), std::invalid_argument);
+
+    bad = m;
+    bad.bx[0] = std::numeric_limits<float>::quiet_NaN();
+    CHECK_THROWS_AS(ship::validate(bad), std::invalid_argument);
+
+    bad = m;
+    bad.bz.back() = std::numeric_limits<float>::infinity();
     CHECK_THROWS_AS(ship::validate(bad), std::invalid_argument);
 }
 

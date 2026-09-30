@@ -11,6 +11,7 @@
 #include <limits>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace ship {
 
@@ -71,6 +72,14 @@ void validate(FieldMap const& map) {
         fail("expected " + std::to_string(total) + " values per component, got " +
              std::to_string(map.bx.size()) + "/" + std::to_string(map.by.size()) + "/" +
              std::to_string(map.bz.size()));
+    auto const requireFinite = [&fail](char component, std::vector<float> const& values) {
+        for (std::size_t i = 0; i < values.size(); ++i)
+            if (!std::isfinite(values[i]))
+                fail(std::string("B") + component + "[" + std::to_string(i) + "] is not finite");
+    };
+    requireFinite('x', map.bx);
+    requireFinite('y', map.by);
+    requireFinite('z', map.bz);
 }
 
 }  // namespace ship
