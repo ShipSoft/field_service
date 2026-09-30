@@ -75,7 +75,7 @@ struct FieldMap {
 
 /// Throw `std::invalid_argument` unless `map` is well formed: non-empty name,
 /// at least two nodes and a positive extent per axis, value arrays of
-/// `grid.size()` entries, mirrored axes starting at 0, parities of +-1.
+/// `grid.size()` finite entries, mirrored axes starting at 0, parities of +-1.
 void validate(FieldMap const& map);
 
 /// Build a thread-safe evaluator for `map`: trilinear interpolation, clamped to
