@@ -10,7 +10,7 @@
 # instead of the root_cxx_standard variant matrix. Keep everything else in
 # lockstep when bumping versions or editing the release recipe.
 context:
-  version: "0.1.0"
+  version: "0.2.0"
   cxx_standard: "23"
 
 recipe:
