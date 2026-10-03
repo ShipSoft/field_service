@@ -763,7 +763,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/noarch/zipp-4.1.0-pyhcf101f3_0.conda
       - conda: https://prefix.dev/ship/linux-64/mp-units-2.5.0-hb0f4dca_5.conda
       - conda: https://prefix.dev/ship/linux-64/shipdatamodel-0.5.0-h0518e97_0.conda
-      - pypi: https://files.pythonhosted.org/packages/87/ef/dcfaf0d78cf3684575fcdacd9213ce1d9d1bf98b9c194f891d0fe94dcda6/gersemi-0.29.1-cp314-cp314-manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/04/53/f2815b34359959172a6931932adde8e631de727a697a858265690030b55b/gersemi-0.29.2-cp314-cp314-manylinux_2_28_x86_64.whl
   package:
     channels:
     - url: https://prefix.dev/ship/
@@ -7521,10 +7521,10 @@ packages:
     - shipdatamodel >=0.5.0,<0.6.0a0
   size: 80182
   timestamp: 1790672403583
-- pypi: https://files.pythonhosted.org/packages/87/ef/dcfaf0d78cf3684575fcdacd9213ce1d9d1bf98b9c194f891d0fe94dcda6/gersemi-0.29.1-cp314-cp314-manylinux_2_28_x86_64.whl
+- pypi: https://files.pythonhosted.org/packages/04/53/f2815b34359959172a6931932adde8e631de727a697a858265690030b55b/gersemi-0.29.2-cp314-cp314-manylinux_2_28_x86_64.whl
   name: gersemi
-  version: 0.29.1
-  sha256: 014edec25c5162ca3ef0d2cc5699b37de27cfa7455e74accd85dae94dd9e3b3d
+  version: 0.29.2
+  sha256: a8a851f3af50e185beff001e4666b24f4bb24b3f2810671eb4d04b30fff7066c
   requires_dist:
   - pyyaml>=5,<7
   requires_python: '>=3.8'
