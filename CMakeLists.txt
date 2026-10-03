@@ -44,7 +44,7 @@ include(FetchContent)
 FetchContent_Declare(
     covfie
     GIT_REPOSITORY https://github.com/acts-project/covfie.git
-    GIT_TAG v0.15.6
+    GIT_TAG v0.16.0
     GIT_SHALLOW TRUE
     EXCLUDE_FROM_ALL
 )
