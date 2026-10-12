@@ -25,9 +25,12 @@ class IFieldEvaluator {
 
     virtual ~IFieldEvaluator() = default;
 
-    /// Return {Bx, By, Bz} in Tesla at global position (x, y, z) in mm.
-    /// Behaviour outside the mapped region is implementation-defined; the
-    /// covfie-backed evaluator clamps to the boundary value.
+    /// Return {Bx, By, Bz} in Tesla at position (x, y, z) in the evaluator's
+    /// frame. Evaluators from `makeFieldEvaluator` and `loadFieldMap` use the
+    /// map's local frame; the regions of `FieldMapSource` apply the magnet's
+    /// translation and take global positions.
+    /// Behaviour outside the mapped region is implementation-defined; map
+    /// evaluators clamp to the boundary value.
     [[nodiscard]] virtual std::array<field_q, 3> at(pos_q x, pos_q y, pos_q z) const = 0;
 };
 
