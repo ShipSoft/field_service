@@ -59,7 +59,7 @@ An [automatic class reference](https://shipsoft.github.io/field_service/) is bui
 
 The supported way to set up a build environment is [pixi](https://pixi.sh).
 `pixi.toml` pins the toolchain and all required packages
-(`mp-units`, `geant4`, `root`, `cmake`, `ninja`, `cxx-compiler`).
+(`mp-units`, `geant4`, `root`, `catch2`, `cmake`, `ninja`, `cxx-compiler`).
 
 ```bash
 git clone https://github.com/ShipSoft/field_service
@@ -86,6 +86,18 @@ cmake -S . -B build
 cmake --build build
 ctest --test-dir build
 ```
+
+The tests need an installed Catch2 3, which CMake locates with `find_package`.
+If it is not under a default search path, add its install prefix to
+`CMAKE_PREFIX_PATH`, either as a cache variable or as an environment variable.
+Separate several prefixes with `;`.
+
+```bash
+cmake -S . -B build -DCMAKE_PREFIX_PATH=/path/to/catch2
+```
+
+To configure without the tests, and so without Catch2, pass
+`-DBUILD_TESTING=OFF`.
 
 ## Develop
 
