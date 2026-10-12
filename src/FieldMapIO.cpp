@@ -111,25 +111,6 @@ std::vector<FieldMap> read_maps(std::string const& path, std::string const* only
     }
 }
 
-/// Places a map's local frame at `offset` (mm) in the global frame.
-class TranslatedEvaluator final : public IFieldEvaluator {
-   public:
-    TranslatedEvaluator(std::shared_ptr<IFieldEvaluator> inner, std::array<double, 3> const& offset)
-        : inner_{std::move(inner)} {
-        using namespace mp_units::si;
-        for (std::size_t a = 0; a < 3; ++a)
-            offset_[a] = offset[a] * milli<metre>;
-    }
-
-    [[nodiscard]] std::array<field_q, 3> at(pos_q x, pos_q y, pos_q z) const override {
-        return inner_->at(x - offset_[0], y - offset_[1], z - offset_[2]);
-    }
-
-   private:
-    std::shared_ptr<IFieldEvaluator> inner_;
-    std::array<pos_q, 3> offset_;
-};
-
 std::string now_utc() {
     return std::format("{:%FT%TZ}",
                        std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now()));
@@ -238,9 +219,7 @@ FieldMapSource::FieldMapSource(std::vector<MagnetConfig> magnets) {
     regions_.reserve(magnets.size());
     for (auto& m : magnets) {
         FieldRegion r;
-        r.field = loadFieldMap(m.file, m.map);
-        if (m.translation != std::array<double, 3>{})
-            r.field = std::make_shared<TranslatedEvaluator>(std::move(r.field), m.translation);
+        r.field = translated(loadFieldMap(m.file, m.map), m.translation);
         r.name = std::move(m.name);
         r.volume_pattern = std::move(m.volume_pattern);
         regions_.push_back(std::move(r));
