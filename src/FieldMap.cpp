@@ -91,23 +91,24 @@ bool FieldBox::contains(double x, double y, double z) const {
 
 FieldBox extent(FieldMap const& map) {
     FieldBox box{.min = map.grid.min, .max = map.grid.max};
-    for (std::size_t a = 0; a < 3; ++a)
-        if (map.symmetry.mirror[a])
-            box.min[a] = -box.max[a];
+    for (std::size_t a = 0; a < 3; ++a) {
+        if (map.symmetry.mirror.at(a)) {
+            box.min.at(a) = -box.max.at(a);
+        }
+    }
     return box;
 }
 
 namespace {
 
+using mp_units::si::metre;
+using mp_units::si::milli;
+
 class TranslatedEvaluator final : public IFieldEvaluator {
    public:
     TranslatedEvaluator(std::shared_ptr<IFieldEvaluator> inner, std::array<double, 3> const& offset)
-        : inner_{std::move(inner)}, offset_{} {
-        using mp_units::si::metre;
-        using mp_units::si::milli;
-        for (std::size_t a = 0; a < 3; ++a)
-            offset_[a] = offset[a] * milli<metre>;
-    }
+        : inner_{std::move(inner)},
+          offset_{offset[0] * milli<metre>, offset[1] * milli<metre>, offset[2] * milli<metre>} {}
 
     [[nodiscard]] std::array<field_q, 3> at(pos_q x, pos_q y, pos_q z) const override {
         return inner_->at(x - offset_[0], y - offset_[1], z - offset_[2]);
@@ -124,12 +125,11 @@ class ZeroOutsideEvaluator final : public IFieldEvaluator {
         : inner_{std::move(inner)}, box_{box} {}
 
     [[nodiscard]] std::array<field_q, 3> at(pos_q x, pos_q y, pos_q z) const override {
-        using mp_units::si::metre;
-        using mp_units::si::milli;
         using mp_units::si::tesla;
         if (box_.contains(x.numerical_value_in(milli<metre>), y.numerical_value_in(milli<metre>),
-                          z.numerical_value_in(milli<metre>)))
+                          z.numerical_value_in(milli<metre>))) {
             return inner_->at(x, y, z);
+        }
         return {0.0 * tesla, 0.0 * tesla, 0.0 * tesla};
     }
 
@@ -142,20 +142,25 @@ class ZeroOutsideEvaluator final : public IFieldEvaluator {
 
 std::shared_ptr<IFieldEvaluator> translated(std::shared_ptr<IFieldEvaluator> inner,
                                             std::array<double, 3> const& offset) {
-    if (!inner)
+    if (!inner) {
         throw std::invalid_argument("translated: null evaluator");
-    for (auto const v : offset)
-        if (!std::isfinite(v))
+    }
+    for (auto const v : offset) {
+        if (!std::isfinite(v)) {
             throw std::invalid_argument("translated: offset must be finite");
-    if (offset == std::array<double, 3>{})
+        }
+    }
+    if (offset == std::array<double, 3>{}) {
         return inner;
+    }
     return std::make_shared<TranslatedEvaluator>(std::move(inner), offset);
 }
 
 std::shared_ptr<IFieldEvaluator> zeroOutside(std::shared_ptr<IFieldEvaluator> inner,
                                              FieldBox const& box) {
-    if (!inner)
+    if (!inner) {
         throw std::invalid_argument("zeroOutside: null evaluator");
+    }
     return std::make_shared<ZeroOutsideEvaluator>(std::move(inner), box);
 }
 
