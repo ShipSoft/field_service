@@ -37,6 +37,7 @@ outputs:
             -DCMAKE_CXX_STANDARD=${{ cxx_standard }} \
             -DCMAKE_INSTALL_LIBDIR=lib \
             -DBUILD_G4_ADAPTER=ON \
+            -DBUILD_ACTS_ADAPTER=ON \
             -DBUILD_TOOLS=ON \
             -DBUILD_TESTING=OFF \
             -DFETCHCONTENT_SOURCE_DIR_COVFIE=${SRC_DIR}/covfie_src
@@ -55,6 +56,11 @@ outputs:
       # Geant4Config.cmake's find_dependency(EXPAT 2.8.1) needs the expat
       # headers; geant4's qt_* builds only pull in libexpat at runtime.
       - expat
+      # ACTS adapter (header-only). ActsConfig.cmake finds Boost and Eigen3,
+      # which acts-core does not depend on.
+      - acts-core
+      - libboost-devel
+      - eigen
       - root_base
       - root_cxx_standard ${{ cxx_standard }}.*
 
@@ -86,6 +92,8 @@ outputs:
       # run_exports here. mp-units run_export is kept (PUBLIC link).
       ignore_run_exports:
         from_package:
+          - acts-core
+          - libboost-devel
           - geant4
           - root_base
           - root_cxx_standard
@@ -115,6 +123,8 @@ outputs:
       # Links ROOT (kept via root_base's run_exports), not Geant4.
       ignore_run_exports:
         from_package:
+          - acts-core
+          - libboost-devel
           - geant4
     tests:
       - script:
@@ -141,12 +151,46 @@ outputs:
       # ROOT is staged for the tools output, not the g4 adapter.
       ignore_run_exports:
         from_package:
+          - acts-core
+          - libboost-devel
           - root_base
           - root_cxx_standard
     tests:
       - script:
           - test -f $PREFIX/include/FieldService/G4MagFieldAdapter.h
           - test -f $PREFIX/lib/cmake/SHiPFieldService/SHiPFieldServiceG4AdapterTargets.cmake
+
+  - package:
+      name: field-service-acts
+    inherit: field-service-build
+    build:
+      files:
+        - include/FieldService/ActsFieldAdapter.h
+        - lib/cmake/SHiPFieldService/SHiPFieldServiceActsAdapterTargets.cmake
+    requirements:
+      run:
+        - ${{ pin_subpackage('field-service-core', exact=True) }}
+        # find_dependency(Acts) is invoked from Config.cmake whenever the
+        # ActsAdapterTargets file is present in the prefix, and ActsConfig
+        # in turn needs Boost and Eigen3.
+        - acts-core
+        - libboost-devel
+        - eigen
+      run_exports:
+        - ${{ pin_subpackage('field-service-acts', upper_bound='x.x') }}
+      # Header-only: nothing staged is linked into this output.
+      ignore_run_exports:
+        from_package:
+          - acts-core
+          - libboost-devel
+          - geant4
+          - mp-units
+          - root_base
+          - root_cxx_standard
+    tests:
+      - script:
+          - test -f $PREFIX/include/FieldService/ActsFieldAdapter.h
+          - test -f $PREFIX/lib/cmake/SHiPFieldService/SHiPFieldServiceActsAdapterTargets.cmake
 
   - package:
       name: field-service-tools
@@ -164,6 +208,8 @@ outputs:
       # core sub-package, not directly by these binaries.
       ignore_run_exports:
         from_package:
+          - acts-core
+          - libboost-devel
           - geant4
           - mp-units
     tests:

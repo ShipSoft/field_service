@@ -23,6 +23,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(BUILD_SHARED_LIBS "Build shared libraries by default" ON)
 option(BUILD_G4_ADAPTER "Build the optional Geant4 adapter component" ON)
+option(BUILD_ACTS_ADAPTER "Build the optional ACTS adapter component" ON)
 option(BUILD_MAPIO "Build the field-map file I/O component (needs ROOT)" ON)
 option(BUILD_TOOLS "Build the field-map conversion / dump utilities" ON)
 
@@ -133,6 +134,32 @@ if(BUILD_G4_ADAPTER)
 endif()
 
 # ----------------------------------------------------------------------------
+# Optional ACTS adapter
+# ----------------------------------------------------------------------------
+
+if(BUILD_ACTS_ADAPTER)
+    find_package(Acts CONFIG REQUIRED COMPONENTS Core)
+
+    # Header-only, like the Geant4 adapter: consumers write
+    # SHiPFieldService::ActsAdapter and get Acts::Core transitively.
+    add_library(SHiPFieldServiceActsAdapter INTERFACE)
+    set_target_properties(
+        SHiPFieldServiceActsAdapter
+        PROPERTIES EXPORT_NAME ActsAdapter
+    )
+    target_include_directories(
+        SHiPFieldServiceActsAdapter
+        INTERFACE
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+            $<INSTALL_INTERFACE:include>
+    )
+    target_link_libraries(
+        SHiPFieldServiceActsAdapter
+        INTERFACE SHiPFieldService Acts::Core
+    )
+endif()
+
+# ----------------------------------------------------------------------------
 # Tools (.cvf conversion utilities)
 # ----------------------------------------------------------------------------
 
@@ -180,6 +207,19 @@ if(BUILD_G4_ADAPTER)
     install(
         EXPORT SHiPFieldServiceG4AdapterTargets
         FILE SHiPFieldServiceG4AdapterTargets.cmake
+        NAMESPACE SHiPFieldService::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/SHiPFieldService
+    )
+endif()
+
+if(BUILD_ACTS_ADAPTER)
+    install(
+        TARGETS SHiPFieldServiceActsAdapter
+        EXPORT SHiPFieldServiceActsAdapterTargets
+    )
+    install(
+        EXPORT SHiPFieldServiceActsAdapterTargets
+        FILE SHiPFieldServiceActsAdapterTargets.cmake
         NAMESPACE SHiPFieldService::
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/SHiPFieldService
     )
