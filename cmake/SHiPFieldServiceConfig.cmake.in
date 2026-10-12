@@ -30,6 +30,18 @@ else()
 endif()
 unset(_SHiPFS_g4adapter_target_file)
 
+set(_SHiPFS_actsadapter_target_file
+    "${CMAKE_CURRENT_LIST_DIR}/SHiPFieldServiceActsAdapterTargets.cmake"
+)
+if(EXISTS "${_SHiPFS_actsadapter_target_file}")
+    find_dependency(Acts CONFIG REQUIRED COMPONENTS Core)
+    include("${_SHiPFS_actsadapter_target_file}")
+    set(SHiPFieldService_ActsAdapter_FOUND TRUE)
+else()
+    set(SHiPFieldService_ActsAdapter_FOUND FALSE)
+endif()
+unset(_SHiPFS_actsadapter_target_file)
+
 set(_SHiPFS_mapio_target_file
     "${CMAKE_CURRENT_LIST_DIR}/SHiPFieldServiceMapIOTargets.cmake"
 )

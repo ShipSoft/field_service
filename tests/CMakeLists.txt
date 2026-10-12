@@ -32,6 +32,15 @@ target_link_libraries(
 )
 catch_discover_tests(test_field_map)
 
+if(BUILD_ACTS_ADAPTER)
+    add_executable(test_acts_adapter test_acts_adapter.cpp)
+    target_link_libraries(
+        test_acts_adapter
+        PRIVATE SHiPFieldServiceActsAdapter Catch2::Catch2WithMain
+    )
+    catch_discover_tests(test_acts_adapter)
+endif()
+
 if(BUILD_MAPIO)
     # Writes the frozen tests/data/field_map_v<major>.<minor>.root once per
     # format version; see tests/data/README.md. Not run by ctest.

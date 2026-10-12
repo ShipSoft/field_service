@@ -1,11 +1,6 @@
 version: 7
 platforms:
 - name: linux-64
-  virtual-packages:
-  - __unix=0=0
-  - __linux=4.18
-  - __glibc=2.28
-  - __archspec=0=x86_64
 environments:
   default:
     channels:
@@ -13,6 +8,11 @@ environments:
     - url: https://conda.anaconda.org/conda-forge/
     packages:
       linux-64:
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/acts-core-45.5.1-np2hc5ef2b4_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/eigen-5.0.1-h19c2612_3.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libboost-1.90.0-h1101c1b_3.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libboost-devel-1.90.0-hdab9b82_3.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/libboost-headers-1.90.0-h707e725_3.conda
       - conda: https://prefix.dev/conda-forge/linux-64/_openmp_mutex-4.5-8_kmp_llvm.conda
       - conda: https://prefix.dev/conda-forge/linux-64/alsa-lib-1.2.16.1-h7cc23a3_1.conda
       - conda: https://prefix.dev/conda-forge/linux-64/argon2-cffi-bindings-26.1.0-py314h89acca1_2.conda
@@ -390,6 +390,11 @@ environments:
     - https://pypi.org/simple
     packages:
       linux-64:
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/acts-core-45.5.1-np2hc5ef2b4_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/eigen-5.0.1-h19c2612_3.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libboost-1.90.0-h1101c1b_3.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libboost-devel-1.90.0-hdab9b82_3.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/libboost-headers-1.90.0-h707e725_3.conda
       - conda: https://prefix.dev/conda-forge/linux-64/_openmp_mutex-4.5-8_kmp_llvm.conda
       - conda: https://prefix.dev/conda-forge/linux-64/alsa-lib-1.2.16.1-h7cc23a3_1.conda
       - conda: https://prefix.dev/conda-forge/linux-64/argon2-cffi-bindings-26.1.0-py314h89acca1_2.conda
@@ -772,6 +777,11 @@ environments:
     - url: https://conda.anaconda.org/conda-forge/
     packages:
       linux-64:
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/acts-core-45.5.1-np2hc5ef2b4_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/eigen-5.0.1-h19c2612_3.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libboost-1.90.0-h1101c1b_3.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libboost-devel-1.90.0-hdab9b82_3.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/libboost-headers-1.90.0-h707e725_3.conda
       - conda: https://prefix.dev/conda-forge/linux-64/_openmp_mutex-4.5-8_kmp_llvm.conda
       - conda: https://prefix.dev/conda-forge/linux-64/alsa-lib-1.2.16.1-h7cc23a3_1.conda
       - conda: https://prefix.dev/conda-forge/linux-64/argon2-cffi-bindings-26.1.0-py314h89acca1_2.conda
@@ -1144,6 +1154,75 @@ environments:
       - conda: https://prefix.dev/ship/linux-64/mp-units-2.5.0-hb0f4dca_5.conda
       - conda: https://prefix.dev/ship/linux-64/shipdatamodel-0.5.0-h0518e97_0.conda
 packages:
+- conda: https://conda.anaconda.org/conda-forge/linux-64/acts-core-45.5.1-np2hc5ef2b4_1.conda
+  sha256: 42a78317620f92310ee227160c88bc9d1ed42dc0ddc79e30ee99a2edf04e58be
+  md5: ef87d92ee984f888dd1495a80fc34767
+  depends:
+  - libstdcxx >=14
+  - libgcc >=14
+  - __glibc >=2.17,<3.0.a0
+  - libboost >=1.90.0,<1.91.0a0
+  license: MPL-2.0
+  license_family: MOZILLA
+  purls: []
+  run_exports: {}
+  size: 3426137
+  timestamp: 1777106066824
+- conda: https://conda.anaconda.org/conda-forge/linux-64/eigen-5.0.1-h19c2612_3.conda
+  sha256: e134dba3ad3523573d5902ff1222a4033372089ea31efa99e6adaf0aa18f904a
+  md5: cf1f7131e9055f06f07a834091f44ca4
+  license: MPL-2.0
+  license_family: MOZILLA
+  purls: []
+  run_exports: {}
+  size: 1311719
+  timestamp: 1788951264833
+- conda: https://conda.anaconda.org/conda-forge/linux-64/libboost-1.90.0-h1101c1b_3.conda
+  sha256: 868cae2463765495b59ebc1146bd4089f2983439a1ac469eec36b09575b47162
+  md5: bcabb17507a7c82f12e9a0cc67fd57c7
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - bzip2 >=1.0.8,<2.0a0
+  - icu >=78.3,<79.0a0
+  - libgcc >=15
+  - liblzma >=5.8.3,<6.0a0
+  - libstdcxx >=15
+  - libzlib >=1.3.2,<2.0a0
+  - zstd >=1.5.7,<1.6.0a0
+  constrains:
+  - boost-cpp <0.0a0
+  license: BSL-1.0
+  purls: []
+  run_exports: {}
+  size: 3418609
+  timestamp: 1790022514193
+- conda: https://conda.anaconda.org/conda-forge/linux-64/libboost-devel-1.90.0-hdab9b82_3.conda
+  sha256: 0d9008828401ba26fd0f0c0e81cc1a617ecaacd00855cc5273b97acf2e4e9cb7
+  md5: 4fd60e06e7f90c0e9dddae84f75d4c28
+  depends:
+  - libboost 1.90.0 h1101c1b_3
+  - libboost-headers 1.90.0 h707e725_3
+  constrains:
+  - boost-cpp <0.0a0
+  license: BSL-1.0
+  purls: []
+  run_exports:
+    weak:
+    - libboost >=1.90.0,<1.91.0a0
+  size: 39474
+  timestamp: 1790022629467
+- conda: https://conda.anaconda.org/conda-forge/noarch/libboost-headers-1.90.0-h707e725_3.conda
+  sha256: ca00a55588bd34d7cb8b5ffa9ad535bf3a1e16a88fea6b5fb98a22e76e69b673
+  md5: 728d99be2ec827372c0eacea4c1baa10
+  depends:
+  - __unix
+  constrains:
+  - boost-cpp <0.0a0
+  license: BSL-1.0
+  purls: []
+  run_exports: {}
+  size: 14671374
+  timestamp: 1790022432098
 - conda: https://prefix.dev/conda-forge/linux-64/_openmp_mutex-4.5-8_kmp_llvm.conda
   build_number: 8
   sha256: b8de006376660eb12c7fc40803c97e1480bf4bc1253f0d59694b12f81b52fe14
