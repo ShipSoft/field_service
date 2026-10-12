@@ -37,7 +37,8 @@ An [automatic class reference](https://shipsoft.github.io/field_service/) is bui
 - `include/FieldService/IFieldSource.h`: interface (point-query evaluator,
   list of named regions tagged by host-geometry volume name).
 - `include/FieldService/FieldMap.h`: in-memory map (grid, symmetry, values,
-  provenance) and `makeFieldEvaluator`. Core, no ROOT.
+  provenance), `makeFieldEvaluator`, and the `translated` and `zeroOutside`
+  wrappers that place a map and set its field outside the grid. Core, no ROOT.
 - `include/FieldService/FieldMapIO.h`: read and write map files, and
   `FieldMapSource`, which loads one map per magnet. MapIO component.
 - `include/FieldService/CovfieFieldSource.h`: deprecated source reading covfie

@@ -9,8 +9,10 @@
 #include <cstdlib>
 #include <filesystem>
 #include <limits>
+#include <memory>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace ship {
@@ -80,6 +82,81 @@ void validate(FieldMap const& map) {
     requireFinite('x', map.bx);
     requireFinite('y', map.by);
     requireFinite('z', map.bz);
+}
+
+bool FieldBox::contains(double x, double y, double z) const {
+    // Written so that NaN compares false.
+    return x >= min[0] && x <= max[0] && y >= min[1] && y <= max[1] && z >= min[2] && z <= max[2];
+}
+
+FieldBox extent(FieldMap const& map) {
+    FieldBox box{.min = map.grid.min, .max = map.grid.max};
+    for (std::size_t a = 0; a < 3; ++a)
+        if (map.symmetry.mirror[a])
+            box.min[a] = -box.max[a];
+    return box;
+}
+
+namespace {
+
+class TranslatedEvaluator final : public IFieldEvaluator {
+   public:
+    TranslatedEvaluator(std::shared_ptr<IFieldEvaluator> inner, std::array<double, 3> const& offset)
+        : inner_{std::move(inner)}, offset_{} {
+        using mp_units::si::metre;
+        using mp_units::si::milli;
+        for (std::size_t a = 0; a < 3; ++a)
+            offset_[a] = offset[a] * milli<metre>;
+    }
+
+    [[nodiscard]] std::array<field_q, 3> at(pos_q x, pos_q y, pos_q z) const override {
+        return inner_->at(x - offset_[0], y - offset_[1], z - offset_[2]);
+    }
+
+   private:
+    std::shared_ptr<IFieldEvaluator> inner_;
+    std::array<pos_q, 3> offset_;
+};
+
+class ZeroOutsideEvaluator final : public IFieldEvaluator {
+   public:
+    ZeroOutsideEvaluator(std::shared_ptr<IFieldEvaluator> inner, FieldBox const& box)
+        : inner_{std::move(inner)}, box_{box} {}
+
+    [[nodiscard]] std::array<field_q, 3> at(pos_q x, pos_q y, pos_q z) const override {
+        using mp_units::si::metre;
+        using mp_units::si::milli;
+        using mp_units::si::tesla;
+        if (box_.contains(x.numerical_value_in(milli<metre>), y.numerical_value_in(milli<metre>),
+                          z.numerical_value_in(milli<metre>)))
+            return inner_->at(x, y, z);
+        return {0.0 * tesla, 0.0 * tesla, 0.0 * tesla};
+    }
+
+   private:
+    std::shared_ptr<IFieldEvaluator> inner_;
+    FieldBox box_;
+};
+
+}  // namespace
+
+std::shared_ptr<IFieldEvaluator> translated(std::shared_ptr<IFieldEvaluator> inner,
+                                            std::array<double, 3> const& offset) {
+    if (!inner)
+        throw std::invalid_argument("translated: null evaluator");
+    for (auto const v : offset)
+        if (!std::isfinite(v))
+            throw std::invalid_argument("translated: offset must be finite");
+    if (offset == std::array<double, 3>{})
+        return inner;
+    return std::make_shared<TranslatedEvaluator>(std::move(inner), offset);
+}
+
+std::shared_ptr<IFieldEvaluator> zeroOutside(std::shared_ptr<IFieldEvaluator> inner,
+                                             FieldBox const& box) {
+    if (!inner)
+        throw std::invalid_argument("zeroOutside: null evaluator");
+    return std::make_shared<ZeroOutsideEvaluator>(std::move(inner), box);
 }
 
 }  // namespace ship

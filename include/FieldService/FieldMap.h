@@ -83,6 +83,34 @@ void validate(FieldMap const& map);
 /// returned evaluator owns a copy of the values, so `map` may be discarded.
 [[nodiscard]] std::shared_ptr<IFieldEvaluator> makeFieldEvaluator(FieldMap const& map);
 
+/// Axis-aligned box, lengths in mm.
+struct FieldBox {
+    std::array<double, 3> min{};
+    std::array<double, 3> max{};
+
+    /// True if (x, y, z) mm lies inside the box or on its boundary; false if
+    /// any coordinate is NaN.
+    [[nodiscard]] bool contains(double x, double y, double z) const;
+};
+
+/// Region `map` covers in its local frame. A mirrored axis covers
+/// [-max, max], since its grid stores only the half at or above 0.
+[[nodiscard]] FieldBox extent(FieldMap const& map);
+
+/// Evaluator for `inner` placed with its origin at `offset` (mm): the field at
+/// p is `inner`'s field at p - offset. Returns `inner` itself for a zero
+/// offset. Throws `std::invalid_argument` if `inner` is null or `offset` is
+/// not finite.
+[[nodiscard]] std::shared_ptr<IFieldEvaluator> translated(std::shared_ptr<IFieldEvaluator> inner,
+                                                          std::array<double, 3> const& offset);
+
+/// Evaluator that returns `inner`'s field inside `box`, given in `inner`'s
+/// frame, and 0 outside it, where map evaluators would clamp. Use
+/// `extent(map)` as the box to get the FairShip `ShipBFieldMap` behaviour.
+/// Throws `std::invalid_argument` if `inner` is null.
+[[nodiscard]] std::shared_ptr<IFieldEvaluator> zeroOutside(std::shared_ptr<IFieldEvaluator> inner,
+                                                           FieldBox const& box);
+
 /// Canonical path of a map file. A path that does not exist as given is
 /// looked up by its bare filename in `$SHIPFIELD_ROOT/share/field/`; throws
 /// `std::runtime_error` if neither exists.

@@ -126,3 +126,57 @@ TEST_CASE("FieldMap.EvaluatorOwnsItsData", "[field_map]") {
     }
     checkField(*eval, 1, 2, 3, {0.0, -1.5, 0.0});
 }
+
+TEST_CASE("FieldMap.ExtentCoversMirroredAxes", "[field_map]") {
+    auto const plain = ship::extent(ship::test::uniformMap());
+    CHECK(plain.min == std::array<double, 3>{-1000.0, -1000.0, -1000.0});
+    CHECK(plain.max == std::array<double, 3>{1000.0, 1000.0, 1000.0});
+
+    // dipoleMap stores x in [0, 100] and y in [0, 50], mirrored in both.
+    auto const mirrored = ship::extent(ship::test::dipoleMap());
+    CHECK(mirrored.min == std::array<double, 3>{-100.0, -50.0, -200.0});
+    CHECK(mirrored.max == std::array<double, 3>{100.0, 50.0, 200.0});
+}
+
+TEST_CASE("FieldMap.BoxContainsItsBoundaryButNotNaN", "[field_map]") {
+    ship::FieldBox const box{.min = {-1.0, -2.0, -3.0}, .max = {1.0, 2.0, 3.0}};
+    CHECK(box.contains(0.0, 0.0, 0.0));
+    CHECK(box.contains(1.0, -2.0, 3.0));
+    CHECK_FALSE(box.contains(1.001, 0.0, 0.0));
+    CHECK_FALSE(box.contains(0.0, 0.0, -3.001));
+    auto const nan = std::numeric_limits<double>::quiet_NaN();
+    CHECK_FALSE(box.contains(nan, 0.0, 0.0));
+    CHECK_FALSE(box.contains(0.0, 0.0, nan));
+}
+
+TEST_CASE("FieldMap.ZeroOutsideReplacesClamping", "[field_map]") {
+    auto const map = ship::test::dipoleMap();
+    auto const eval = ship::zeroOutside(ship::makeFieldEvaluator(map), ship::extent(map));
+    // Inside, in every quadrant and on the boundary: the map's field.
+    checkField(*eval, -80.0, 40.0, 120.0, ship::test::dipoleField(-80.0, 40.0, 120.0));
+    checkField(*eval, 100.0, -50.0, -200.0, ship::test::dipoleField(100.0, -50.0, -200.0));
+    // Outside, where the bare evaluator would clamp: 0.
+    checkField(*eval, 100.5, 0.0, 0.0, {0.0, 0.0, 0.0});
+    checkField(*eval, 0.0, -60.0, 0.0, {0.0, 0.0, 0.0});
+    checkField(*eval, 0.0, 0.0, 900.0, {0.0, 0.0, 0.0});
+    CHECK_THROWS_AS(ship::zeroOutside(nullptr, ship::extent(map)), std::invalid_argument);
+}
+
+TEST_CASE("FieldMap.TranslatedShiftsTheOrigin", "[field_map]") {
+    auto const local = ship::makeFieldEvaluator(ship::test::dipoleMap());
+    CHECK(ship::translated(local, {0.0, 0.0, 0.0}) == local);
+
+    auto const placed = ship::translated(local, {10.0, -5.0, 5000.0});
+    checkField(*placed, -10.0, 15.0, 5050.0, ship::test::dipoleField(-20.0, 20.0, 50.0));
+
+    // Composed the way a consumer places a map with 0 outside it.
+    auto const map = ship::test::dipoleMap();
+    auto const bounded =
+        ship::translated(ship::zeroOutside(local, ship::extent(map)), {0.0, 0.0, 5000.0});
+    checkField(*bounded, 0.0, 0.0, 5100.0, ship::test::dipoleField(0.0, 0.0, 100.0));
+    checkField(*bounded, 0.0, 0.0, 100.0, {0.0, 0.0, 0.0});
+
+    auto const inf = std::numeric_limits<double>::infinity();
+    CHECK_THROWS_AS(ship::translated(local, {0.0, inf, 0.0}), std::invalid_argument);
+    CHECK_THROWS_AS(ship::translated(nullptr, {1.0, 0.0, 0.0}), std::invalid_argument);
+}

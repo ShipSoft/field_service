@@ -142,7 +142,9 @@ pattern and a translation, for example.
 
 The reference evaluator (`makeFieldEvaluator`) interpolates trilinearly and
 returns the boundary value outside the grid. FairShip's `ShipBFieldMap`
-returns 0 outside instead, and the format allows either.
+returns 0 outside instead, and the format allows either. Wrap the evaluator in
+`zeroOutside(eval, extent(map))` for that behaviour, and in `translated` to
+place it.
 
 ## Reduced precision
 
