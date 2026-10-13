@@ -8,8 +8,8 @@
 // component (SHiPFieldService::MapIO), which depends on ROOT; the core
 // library does not.
 
-#include "FieldService/FieldMap.h"
-#include "FieldService/IFieldSource.h"
+#include "SHiP/FieldService/FieldMap.h"
+#include "SHiP/FieldService/IFieldSource.h"
 
 #include <array>
 #include <cstdint>
