@@ -21,8 +21,8 @@ source:
   - path: ..
   # covfie is FetchContent'd by upstream CMake; vendor it so the build
   # stays offline. Pinned to the same tag the CMakeLists.txt uses.
-  - url: https://github.com/acts-project/covfie/archive/refs/tags/v0.15.6.tar.gz
-    sha256: ed22408f981692398408ffe04ff8e6230c022288552a83dbc2ad34b96003a84e
+  - url: https://github.com/acts-project/covfie/archive/refs/tags/v0.16.0.tar.gz
+    sha256: f1491b85c5e8ed9535e4b99adb85661512964132baf6dc9b9a9af10e4b625cb3
     target_directory: covfie_src
 
 build:
