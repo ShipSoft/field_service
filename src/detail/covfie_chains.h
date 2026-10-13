@@ -35,7 +35,7 @@
 #include <utility>
 #include <variant>
 
-namespace ship::detail {
+namespace SHiP::detail {
 
 using array_backend_t = covfie::backend::array<covfie::vector::float3>;
 
@@ -136,4 +136,4 @@ template <typename clamp_cfg_t>
     return reader_field_t(affine_t::owning_data_t(make_affine(spec), std::move(clamp)));
 }
 
-}  // namespace ship::detail
+}  // namespace SHiP::detail

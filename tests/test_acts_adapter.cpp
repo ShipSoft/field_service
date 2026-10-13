@@ -24,14 +24,14 @@ namespace {
 using Acts::UnitConstants::mm;
 using Acts::UnitConstants::T;
 
-class ThrowingEvaluator final : public ship::IFieldEvaluator {
+class ThrowingEvaluator final : public SHiP::IFieldEvaluator {
    public:
     [[nodiscard]] std::array<field_q, 3> at(pos_q /*x*/, pos_q /*y*/, pos_q /*z*/) const override {
         throw std::runtime_error("boom");
     }
 };
 
-class NaNEvaluator final : public ship::IFieldEvaluator {
+class NaNEvaluator final : public SHiP::IFieldEvaluator {
    public:
     [[nodiscard]] std::array<field_q, 3> at(pos_q /*x*/, pos_q /*y*/, pos_q /*z*/) const override {
         using mp_units::si::tesla;
@@ -40,7 +40,7 @@ class NaNEvaluator final : public ship::IFieldEvaluator {
     }
 };
 
-void checkField(ship::ActsFieldAdapter const& adapter, Acts::Vector3 const& position,
+void checkField(SHiP::ActsFieldAdapter const& adapter, Acts::Vector3 const& position,
                 std::array<double, 3> const& expected_T) {
     using Catch::Matchers::WithinAbs;
     INFO("at (" << position.transpose() / mm << ") mm");
@@ -52,7 +52,7 @@ void checkField(ship::ActsFieldAdapter const& adapter, Acts::Vector3 const& posi
     CHECK_THAT((*B)[2] / T, WithinAbs(expected_T[2], 1e-4));
 }
 
-bool lookupFails(ship::ActsFieldAdapter const& adapter, Acts::Vector3 const& position) {
+bool lookupFails(SHiP::ActsFieldAdapter const& adapter, Acts::Vector3 const& position) {
     auto cache = adapter.makeCache(Acts::MagneticFieldContext{});
     return !adapter.getField(position, cache).ok();
 }
@@ -60,7 +60,7 @@ bool lookupFails(ship::ActsFieldAdapter const& adapter, Acts::Vector3 const& pos
 }  // namespace
 
 TEST_CASE("ActsAdapter.ConvertsUnits", "[acts_adapter]") {
-    ship::ActsFieldAdapter const adapter{ship::makeFieldEvaluator(ship::test::uniformMap())};
+    SHiP::ActsFieldAdapter const adapter{SHiP::makeFieldEvaluator(SHiP::test::uniformMap())};
     checkField(adapter, Acts::Vector3{10.0 * mm, -20.0 * mm, 30.0 * mm}, {0.0, -1.5, 0.0});
     // ACTS lengths are not in mm internally; a position given in metres must
     // reach the evaluator as the same point.
@@ -68,11 +68,11 @@ TEST_CASE("ActsAdapter.ConvertsUnits", "[acts_adapter]") {
 }
 
 TEST_CASE("ActsAdapter.ComposesWithPlacement", "[acts_adapter]") {
-    auto const map = ship::test::dipoleMap();
-    ship::ActsFieldAdapter const adapter{ship::translated(
-        ship::zeroOutside(ship::makeFieldEvaluator(map), ship::extent(map)), {0.0, 0.0, 5000.0})};
+    auto const map = SHiP::test::dipoleMap();
+    SHiP::ActsFieldAdapter const adapter{SHiP::translated(
+        SHiP::zeroOutside(SHiP::makeFieldEvaluator(map), SHiP::extent(map)), {0.0, 0.0, 5000.0})};
     checkField(adapter, Acts::Vector3{-30.0 * mm, 10.0 * mm, 5120.0 * mm},
-               ship::test::dipoleField(-30.0, 10.0, 120.0));
+               SHiP::test::dipoleField(-30.0, 10.0, 120.0));
     // Past the grid: no field, and the lookup still succeeds.
     checkField(adapter, Acts::Vector3{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0});
 }
@@ -80,7 +80,7 @@ TEST_CASE("ActsAdapter.ComposesWithPlacement", "[acts_adapter]") {
 TEST_CASE("ActsAdapter.ReportsTheFirstFailureOnce", "[acts_adapter]") {
     int reports = 0;
     std::string last;
-    ship::ActsFieldAdapter const adapter{std::make_shared<ThrowingEvaluator>(),
+    SHiP::ActsFieldAdapter const adapter{std::make_shared<ThrowingEvaluator>(),
                                          [&](std::string_view what) {
                                              ++reports;
                                              last = what;
@@ -92,14 +92,14 @@ TEST_CASE("ActsAdapter.ReportsTheFirstFailureOnce", "[acts_adapter]") {
 }
 
 TEST_CASE("ActsAdapter.FailsNonFiniteLookups", "[acts_adapter]") {
-    ship::ActsFieldAdapter const nan_field{std::make_shared<NaNEvaluator>()};
+    SHiP::ActsFieldAdapter const nan_field{std::make_shared<NaNEvaluator>()};
     CHECK(lookupFails(nan_field, Acts::Vector3::Zero()));
 
-    ship::ActsFieldAdapter const uniform{ship::makeFieldEvaluator(ship::test::uniformMap())};
+    SHiP::ActsFieldAdapter const uniform{SHiP::makeFieldEvaluator(SHiP::test::uniformMap())};
     auto const nan = std::numeric_limits<double>::quiet_NaN();
     CHECK(lookupFails(uniform, Acts::Vector3{0.0, nan, 0.0}));
 }
 
 TEST_CASE("ActsAdapter.RejectsNullEvaluator", "[acts_adapter]") {
-    CHECK_THROWS_AS(ship::ActsFieldAdapter{nullptr}, std::invalid_argument);
+    CHECK_THROWS_AS(SHiP::ActsFieldAdapter{nullptr}, std::invalid_argument);
 }

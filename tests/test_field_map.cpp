@@ -15,13 +15,13 @@
 
 namespace {
 
-std::array<double, 3> evalAt(ship::IFieldEvaluator const& eval, double x, double y, double z) {
+std::array<double, 3> evalAt(SHiP::IFieldEvaluator const& eval, double x, double y, double z) {
     using namespace mp_units::si::unit_symbols;
     auto const B = eval.at(x * mm, y * mm, z * mm);
     return {B[0].numerical_value_in(T), B[1].numerical_value_in(T), B[2].numerical_value_in(T)};
 }
 
-void checkField(ship::IFieldEvaluator const& eval, double x, double y, double z,
+void checkField(SHiP::IFieldEvaluator const& eval, double x, double y, double z,
                 std::array<double, 3> const& expected) {
     using Catch::Matchers::WithinAbs;
     INFO("at (" << x << ", " << y << ", " << z << ") mm");
@@ -34,7 +34,7 @@ void checkField(ship::IFieldEvaluator const& eval, double x, double y, double z,
 }  // namespace
 
 TEST_CASE("FieldMap.GridIndexIsZFastest", "[field_map]") {
-    ship::FieldMapGrid const g{{0, 0, 0}, {1, 1, 1}, {2, 3, 4}};
+    SHiP::FieldMapGrid const g{{0, 0, 0}, {1, 1, 1}, {2, 3, 4}};
     CHECK(g.size() == 24u);
     CHECK(g.index(0, 0, 1) == 1u);
     CHECK(g.index(0, 1, 0) == 4u);
@@ -43,103 +43,103 @@ TEST_CASE("FieldMap.GridIndexIsZFastest", "[field_map]") {
 }
 
 TEST_CASE("FieldMap.ValidateRejectsMalformedMaps", "[field_map]") {
-    auto m = ship::test::uniformMap();
-    CHECK_NOTHROW(ship::validate(m));
+    auto m = SHiP::test::uniformMap();
+    CHECK_NOTHROW(SHiP::validate(m));
 
     auto bad = m;
     bad.name.clear();
-    CHECK_THROWS_AS(ship::validate(bad), std::invalid_argument);
+    CHECK_THROWS_AS(SHiP::validate(bad), std::invalid_argument);
 
     bad = m;
     bad.grid.n[1] = 1;
-    CHECK_THROWS_AS(ship::validate(bad), std::invalid_argument);
+    CHECK_THROWS_AS(SHiP::validate(bad), std::invalid_argument);
 
     bad = m;
     bad.grid.max[2] = bad.grid.min[2];
-    CHECK_THROWS_AS(ship::validate(bad), std::invalid_argument);
+    CHECK_THROWS_AS(SHiP::validate(bad), std::invalid_argument);
 
     bad = m;
     bad.by.pop_back();
-    CHECK_THROWS_AS(ship::validate(bad), std::invalid_argument);
+    CHECK_THROWS_AS(SHiP::validate(bad), std::invalid_argument);
 
     // A mirrored axis must start at 0: the reflection plane is the origin.
     bad = m;
     bad.symmetry.mirror[0] = true;
-    CHECK_THROWS_AS(ship::validate(bad), std::invalid_argument);
+    CHECK_THROWS_AS(SHiP::validate(bad), std::invalid_argument);
 
     bad = m;
     bad.symmetry.parity[4] = 0;
-    CHECK_THROWS_AS(ship::validate(bad), std::invalid_argument);
+    CHECK_THROWS_AS(SHiP::validate(bad), std::invalid_argument);
 
     bad = m;
     bad.bx[0] = std::numeric_limits<float>::quiet_NaN();
-    CHECK_THROWS_AS(ship::validate(bad), std::invalid_argument);
+    CHECK_THROWS_AS(SHiP::validate(bad), std::invalid_argument);
 
     bad = m;
     bad.bz.back() = std::numeric_limits<float>::infinity();
-    CHECK_THROWS_AS(ship::validate(bad), std::invalid_argument);
+    CHECK_THROWS_AS(SHiP::validate(bad), std::invalid_argument);
 }
 
 TEST_CASE("FieldMap.EvaluatorInterpolatesAndClamps", "[field_map]") {
     // Without symmetry: a map of dipoleField over a box straddling the origin.
-    ship::FieldMap m;
+    SHiP::FieldMap m;
     m.name = "full";
     m.grid = {{-100, -50, -200}, {100, 50, 200}, {5, 5, 5}};
     for (std::size_t i = 0; i < 5; ++i)
         for (std::size_t j = 0; j < 5; ++j)
             for (std::size_t k = 0; k < 5; ++k) {
-                auto const B = ship::test::dipoleField(m.grid.node(0, i), m.grid.node(1, j),
+                auto const B = SHiP::test::dipoleField(m.grid.node(0, i), m.grid.node(1, j),
                                                        m.grid.node(2, k));
                 m.bx.push_back(static_cast<float>(B[0]));
                 m.by.push_back(static_cast<float>(B[1]));
                 m.bz.push_back(static_cast<float>(B[2]));
             }
-    auto const eval = ship::makeFieldEvaluator(m);
+    auto const eval = SHiP::makeFieldEvaluator(m);
     REQUIRE(eval);
 
     // Between nodes: bilinear products are reproduced exactly.
-    checkField(*eval, 12.5, -7.0, 33.0, ship::test::dipoleField(12.5, -7.0, 33.0));
+    checkField(*eval, 12.5, -7.0, 33.0, SHiP::test::dipoleField(12.5, -7.0, 33.0));
     // On the corners, which must not read past the grid.
-    checkField(*eval, 100, 50, 200, ship::test::dipoleField(100, 50, 200));
-    checkField(*eval, -100, -50, -200, ship::test::dipoleField(-100, -50, -200));
+    checkField(*eval, 100, 50, 200, SHiP::test::dipoleField(100, 50, 200));
+    checkField(*eval, -100, -50, -200, SHiP::test::dipoleField(-100, -50, -200));
     // Outside: clamped to the boundary value.
-    checkField(*eval, 500, 0, 0, ship::test::dipoleField(100, 0, 0));
-    checkField(*eval, 0, 0, -900, ship::test::dipoleField(0, 0, -200));
+    checkField(*eval, 500, 0, 0, SHiP::test::dipoleField(100, 0, 0));
+    checkField(*eval, 0, 0, -900, SHiP::test::dipoleField(0, 0, -200));
 }
 
 TEST_CASE("FieldMap.EvaluatorAppliesQuadrantSymmetry", "[field_map]") {
-    auto const eval = ship::makeFieldEvaluator(ship::test::dipoleMap());
+    auto const eval = SHiP::makeFieldEvaluator(SHiP::test::dipoleMap());
     REQUIRE(eval);
     // dipoleField has exactly the parities of quadrantDipole(), so the folded
     // evaluation must agree with the analytic field in all four quadrants.
     for (double const x : {-80.0, -30.0, 0.0, 30.0, 80.0})
         for (double const y : {-40.0, -10.0, 10.0, 40.0})
             for (double const z : {-150.0, 0.0, 120.0})
-                checkField(*eval, x, y, z, ship::test::dipoleField(x, y, z));
+                checkField(*eval, x, y, z, SHiP::test::dipoleField(x, y, z));
 }
 
 TEST_CASE("FieldMap.EvaluatorOwnsItsData", "[field_map]") {
-    std::shared_ptr<ship::IFieldEvaluator> eval;
+    std::shared_ptr<SHiP::IFieldEvaluator> eval;
     {
-        auto m = ship::test::uniformMap();
-        eval = ship::makeFieldEvaluator(m);
+        auto m = SHiP::test::uniformMap();
+        eval = SHiP::makeFieldEvaluator(m);
     }
     checkField(*eval, 1, 2, 3, {0.0, -1.5, 0.0});
 }
 
 TEST_CASE("FieldMap.ExtentCoversMirroredAxes", "[field_map]") {
-    auto const plain = ship::extent(ship::test::uniformMap());
+    auto const plain = SHiP::extent(SHiP::test::uniformMap());
     CHECK(plain.min == std::array<double, 3>{-1000.0, -1000.0, -1000.0});
     CHECK(plain.max == std::array<double, 3>{1000.0, 1000.0, 1000.0});
 
     // dipoleMap stores x in [0, 100] and y in [0, 50], mirrored in both.
-    auto const mirrored = ship::extent(ship::test::dipoleMap());
+    auto const mirrored = SHiP::extent(SHiP::test::dipoleMap());
     CHECK(mirrored.min == std::array<double, 3>{-100.0, -50.0, -200.0});
     CHECK(mirrored.max == std::array<double, 3>{100.0, 50.0, 200.0});
 }
 
 TEST_CASE("FieldMap.BoxContainsItsBoundaryButNotNaN", "[field_map]") {
-    ship::FieldBox const box{.min = {-1.0, -2.0, -3.0}, .max = {1.0, 2.0, 3.0}};
+    SHiP::FieldBox const box{.min = {-1.0, -2.0, -3.0}, .max = {1.0, 2.0, 3.0}};
     CHECK(box.contains(0.0, 0.0, 0.0));
     CHECK(box.contains(1.0, -2.0, 3.0));
     CHECK_FALSE(box.contains(1.001, 0.0, 0.0));
@@ -150,33 +150,33 @@ TEST_CASE("FieldMap.BoxContainsItsBoundaryButNotNaN", "[field_map]") {
 }
 
 TEST_CASE("FieldMap.ZeroOutsideReplacesClamping", "[field_map]") {
-    auto const map = ship::test::dipoleMap();
-    auto const eval = ship::zeroOutside(ship::makeFieldEvaluator(map), ship::extent(map));
+    auto const map = SHiP::test::dipoleMap();
+    auto const eval = SHiP::zeroOutside(SHiP::makeFieldEvaluator(map), SHiP::extent(map));
     // Inside, in every quadrant and on the boundary: the map's field.
-    checkField(*eval, -80.0, 40.0, 120.0, ship::test::dipoleField(-80.0, 40.0, 120.0));
-    checkField(*eval, 100.0, -50.0, -200.0, ship::test::dipoleField(100.0, -50.0, -200.0));
+    checkField(*eval, -80.0, 40.0, 120.0, SHiP::test::dipoleField(-80.0, 40.0, 120.0));
+    checkField(*eval, 100.0, -50.0, -200.0, SHiP::test::dipoleField(100.0, -50.0, -200.0));
     // Outside, where the bare evaluator would clamp: 0.
     checkField(*eval, 100.5, 0.0, 0.0, {0.0, 0.0, 0.0});
     checkField(*eval, 0.0, -60.0, 0.0, {0.0, 0.0, 0.0});
     checkField(*eval, 0.0, 0.0, 900.0, {0.0, 0.0, 0.0});
-    CHECK_THROWS_AS(ship::zeroOutside(nullptr, ship::extent(map)), std::invalid_argument);
+    CHECK_THROWS_AS(SHiP::zeroOutside(nullptr, SHiP::extent(map)), std::invalid_argument);
 }
 
 TEST_CASE("FieldMap.TranslatedShiftsTheOrigin", "[field_map]") {
-    auto const local = ship::makeFieldEvaluator(ship::test::dipoleMap());
-    CHECK(ship::translated(local, {0.0, 0.0, 0.0}) == local);
+    auto const local = SHiP::makeFieldEvaluator(SHiP::test::dipoleMap());
+    CHECK(SHiP::translated(local, {0.0, 0.0, 0.0}) == local);
 
-    auto const placed = ship::translated(local, {10.0, -5.0, 5000.0});
-    checkField(*placed, -10.0, 15.0, 5050.0, ship::test::dipoleField(-20.0, 20.0, 50.0));
+    auto const placed = SHiP::translated(local, {10.0, -5.0, 5000.0});
+    checkField(*placed, -10.0, 15.0, 5050.0, SHiP::test::dipoleField(-20.0, 20.0, 50.0));
 
     // Composed the way a consumer places a map with 0 outside it.
-    auto const map = ship::test::dipoleMap();
+    auto const map = SHiP::test::dipoleMap();
     auto const bounded =
-        ship::translated(ship::zeroOutside(local, ship::extent(map)), {0.0, 0.0, 5000.0});
-    checkField(*bounded, 0.0, 0.0, 5100.0, ship::test::dipoleField(0.0, 0.0, 100.0));
+        SHiP::translated(SHiP::zeroOutside(local, SHiP::extent(map)), {0.0, 0.0, 5000.0});
+    checkField(*bounded, 0.0, 0.0, 5100.0, SHiP::test::dipoleField(0.0, 0.0, 100.0));
     checkField(*bounded, 0.0, 0.0, 100.0, {0.0, 0.0, 0.0});
 
     auto const inf = std::numeric_limits<double>::infinity();
-    CHECK_THROWS_AS(ship::translated(local, {0.0, inf, 0.0}), std::invalid_argument);
-    CHECK_THROWS_AS(ship::translated(nullptr, {1.0, 0.0, 0.0}), std::invalid_argument);
+    CHECK_THROWS_AS(SHiP::translated(local, {0.0, inf, 0.0}), std::invalid_argument);
+    CHECK_THROWS_AS(SHiP::translated(nullptr, {1.0, 0.0, 0.0}), std::invalid_argument);
 }

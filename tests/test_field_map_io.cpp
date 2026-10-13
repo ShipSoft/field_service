@@ -33,7 +33,7 @@ struct TempFile {
     ~TempFile() { std::filesystem::remove(path); }
 };
 
-void requireEqual(ship::FieldMap const& a, ship::FieldMap const& b) {
+void requireEqual(SHiP::FieldMap const& a, SHiP::FieldMap const& b) {
     CHECK(a.name == b.name);
     CHECK(a.grid.min == b.grid.min);
     CHECK(a.grid.max == b.grid.max);
@@ -51,7 +51,7 @@ void requireEqual(ship::FieldMap const& a, ship::FieldMap const& b) {
 
 /// Values a hand-written file may deviate in.
 struct RawOverrides {
-    std::uint16_t format_major = ship::kFieldMapFormatMajor;
+    std::uint16_t format_major = SHiP::kFieldMapFormatMajor;
     std::string length_unit = "mm";
     std::string coordinate_system = "cartesian";
 };
@@ -59,7 +59,7 @@ struct RawOverrides {
 /// Write the uniform reference map with the v1 schema, bypassing
 /// writeFieldMaps so the file can contain what it would refuse to write.
 void writeRaw(std::filesystem::path const& path, RawOverrides const& o) {
-    auto const m = ship::test::uniformMap();
+    auto const m = SHiP::test::uniformMap();
     auto model = ROOT::RNTupleModel::Create();
     *model->MakeField<std::uint16_t>("format_major") = o.format_major;
     *model->MakeField<std::uint16_t>("format_minor") = 0;
@@ -83,7 +83,7 @@ void writeRaw(std::filesystem::path const& path, RawOverrides const& o) {
     // A field this reader does not know, as a later minor version may add.
     *model->MakeField<float>("future_field") = 42.0f;
     auto writer =
-        ROOT::RNTupleWriter::Recreate(std::move(model), ship::kFieldMapNTupleName, path.string());
+        ROOT::RNTupleWriter::Recreate(std::move(model), SHiP::kFieldMapNTupleName, path.string());
     writer->Fill();
 }
 
@@ -91,33 +91,33 @@ void writeRaw(std::filesystem::path const& path, RawOverrides const& o) {
 
 TEST_CASE("FieldMapIO.RoundTripsSeveralMaps", "[field_map_io]") {
     TempFile tmp("roundtrip");
-    auto const maps = ship::test::referenceMaps();
-    ship::writeFieldMaps(tmp.path.string(), maps);
+    auto const maps = SHiP::test::referenceMaps();
+    SHiP::writeFieldMaps(tmp.path.string(), maps);
 
-    auto const read = ship::readFieldMaps(tmp.path.string());
+    auto const read = SHiP::readFieldMaps(tmp.path.string());
     REQUIRE(read.size() == maps.size());
     for (std::size_t i = 0; i < maps.size(); ++i)
         requireEqual(read[i], maps[i]);
 
-    requireEqual(ship::readFieldMap(tmp.path.string(), "uniform"), maps[1]);
-    CHECK_THROWS_AS(ship::readFieldMap(tmp.path.string(), "missing"), std::runtime_error);
+    requireEqual(SHiP::readFieldMap(tmp.path.string(), "uniform"), maps[1]);
+    CHECK_THROWS_AS(SHiP::readFieldMap(tmp.path.string(), "missing"), std::runtime_error);
 }
 
 TEST_CASE("FieldMapIO.FillsMissingProvenance", "[field_map_io]") {
     TempFile tmp("provenance");
-    auto m = ship::test::uniformMap();
+    auto m = SHiP::test::uniformMap();
     m.provenance = {};
-    ship::writeFieldMaps(tmp.path.string(), std::span{&m, 1});
-    auto const read = ship::readFieldMap(tmp.path.string(), m.name);
+    SHiP::writeFieldMaps(tmp.path.string(), std::span{&m, 1});
+    auto const read = SHiP::readFieldMap(tmp.path.string(), m.name);
     CHECK_THAT(read.provenance.producer, Catch::Matchers::StartsWith("SHiPFieldService "));
     CHECK(read.provenance.created_utc.size() == std::string("2026-09-29T00:00:00Z").size());
 }
 
 TEST_CASE("FieldMapIO.TruncatedValuesStayClose", "[field_map_io]") {
     TempFile tmp("truncated");
-    auto const m = ship::test::dipoleMap();
-    ship::writeFieldMaps(tmp.path.string(), std::span{&m, 1}, {.truncated_bits = 20});
-    auto const read = ship::readFieldMap(tmp.path.string(), m.name);
+    auto const m = SHiP::test::dipoleMap();
+    SHiP::writeFieldMaps(tmp.path.string(), std::span{&m, 1}, {.truncated_bits = 20});
+    auto const read = SHiP::readFieldMap(tmp.path.string(), m.name);
     REQUIRE(read.by.size() == m.by.size());
     // 20 bits keep 11 of the 23 mantissa bits: relative error below 2^-11.
     for (std::size_t i = 0; i < m.by.size(); ++i)
@@ -126,20 +126,20 @@ TEST_CASE("FieldMapIO.TruncatedValuesStayClose", "[field_map_io]") {
 
 TEST_CASE("FieldMapIO.WriterRejectsBadInput", "[field_map_io]") {
     TempFile tmp("writer_rejects");
-    std::vector<ship::FieldMap> dup{ship::test::uniformMap(), ship::test::uniformMap()};
-    CHECK_THROWS_AS(ship::writeFieldMaps(tmp.path.string(), dup), std::invalid_argument);
-    auto bad = ship::test::uniformMap();
+    std::vector<SHiP::FieldMap> dup{SHiP::test::uniformMap(), SHiP::test::uniformMap()};
+    CHECK_THROWS_AS(SHiP::writeFieldMaps(tmp.path.string(), dup), std::invalid_argument);
+    auto bad = SHiP::test::uniformMap();
     bad.bz.clear();
-    CHECK_THROWS_AS(ship::writeFieldMaps(tmp.path.string(), std::span{&bad, 1}),
+    CHECK_THROWS_AS(SHiP::writeFieldMaps(tmp.path.string(), std::span{&bad, 1}),
                     std::invalid_argument);
 }
 
 TEST_CASE("FieldMapIO.ReaderAcceptsUnknownFields", "[field_map_io]") {
     TempFile tmp("unknown_fields");
     writeRaw(tmp.path, {});
-    auto const read = ship::readFieldMaps(tmp.path.string());
+    auto const read = SHiP::readFieldMaps(tmp.path.string());
     REQUIRE(read.size() == 1u);
-    CHECK(read[0].by == ship::test::uniformMap().by);
+    CHECK(read[0].by == SHiP::test::uniformMap().by);
 }
 
 TEST_CASE("FieldMapIO.ReaderRejectsWhatItCannotInterpret", "[field_map_io]") {
@@ -147,25 +147,25 @@ TEST_CASE("FieldMapIO.ReaderRejectsWhatItCannotInterpret", "[field_map_io]") {
     using Catch::Matchers::ContainsSubstring;
 
     writeRaw(tmp.path, {.format_major = 2});
-    CHECK_THROWS_WITH(ship::readFieldMaps(tmp.path.string()), ContainsSubstring("major version 2"));
+    CHECK_THROWS_WITH(SHiP::readFieldMaps(tmp.path.string()), ContainsSubstring("major version 2"));
 
     writeRaw(tmp.path, {.length_unit = "cm"});
-    CHECK_THROWS_WITH(ship::readFieldMaps(tmp.path.string()), ContainsSubstring("length_unit"));
+    CHECK_THROWS_WITH(SHiP::readFieldMaps(tmp.path.string()), ContainsSubstring("length_unit"));
 
     writeRaw(tmp.path, {.coordinate_system = "cylindrical_rz"});
-    CHECK_THROWS_WITH(ship::readFieldMaps(tmp.path.string()),
+    CHECK_THROWS_WITH(SHiP::readFieldMaps(tmp.path.string()),
                       ContainsSubstring("coordinate_system"));
 
-    CHECK_THROWS_AS(ship::readFieldMaps((tmp.path.parent_path() / "no_such_file.root").string()),
+    CHECK_THROWS_AS(SHiP::readFieldMaps((tmp.path.parent_path() / "no_such_file.root").string()),
                     std::runtime_error);
 }
 
 TEST_CASE("FieldMapIO.SourceSharesMapsAndTranslates", "[field_map_io]") {
     TempFile tmp("source");
-    auto const maps = ship::test::referenceMaps();
-    ship::writeFieldMaps(tmp.path.string(), maps);
+    auto const maps = SHiP::test::referenceMaps();
+    SHiP::writeFieldMaps(tmp.path.string(), maps);
 
-    ship::FieldMapSource src({
+    SHiP::FieldMapSource src({
         {"MagA", "MuonShield", tmp.path.string(), "dipole_quadrant", {}},
         {"MagB", "Spectrometer", tmp.path.string(), "dipole_quadrant", {}},
         {"MagC", "Shifted", tmp.path.string(), "dipole_quadrant", {0.0, 0.0, 5000.0}},
@@ -181,7 +181,7 @@ TEST_CASE("FieldMapIO.SourceSharesMapsAndTranslates", "[field_map_io]") {
     using Catch::Matchers::WithinAbs;
     auto const local = regs[0].field->at(-20.0 * mm, 10.0 * mm, 50.0 * mm);
     auto const global = regs[2].field->at(-20.0 * mm, 10.0 * mm, 5050.0 * mm);
-    auto const expected = ship::test::dipoleField(-20.0, 10.0, 50.0);
+    auto const expected = SHiP::test::dipoleField(-20.0, 10.0, 50.0);
     for (std::size_t c = 0; c < 3; ++c) {
         CHECK_THAT(local[c].numerical_value_in(T), WithinAbs(expected[c], 1e-4));
         CHECK_THAT(global[c].numerical_value_in(T), WithinAbs(expected[c], 1e-4));

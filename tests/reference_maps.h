@@ -14,7 +14,7 @@
 #include <cstddef>
 #include <vector>
 
-namespace ship::test {
+namespace SHiP::test {
 
 /// Quadrant-symmetric dipole-like field, defined for all (x, y, z) in mm:
 /// Bx is odd in x and y, By even, Bz even in x and odd in y, matching
@@ -59,4 +59,4 @@ inline std::vector<FieldMap> referenceMaps() {
     return {dipoleMap(), uniformMap()};
 }
 
-}  // namespace ship::test
+}  // namespace SHiP::test

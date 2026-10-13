@@ -27,15 +27,15 @@ using FillFn = std::function<std::array<float, 3>(float x, float y, float z)>;
 /// grid node. Uses the canonical writer chain (nearest_neighbour, so
 /// `view.at(...)` yields an assignable lvalue) from detail/covfie_chains.h.
 void WriteField(std::filesystem::path const& path, FillFn const& fill) {
-    ship::detail::GridSpec const spec{{kMin, kMin, kMin}, {kMax, kMax, kMax}, {kN, kN, kN}};
-    auto field = ship::detail::make_writer_field(spec);
-    ship::detail::writer_field_t::view_t view(field);
+    SHiP::detail::GridSpec const spec{{kMin, kMin, kMin}, {kMax, kMax, kMax}, {kN, kN, kN}};
+    auto field = SHiP::detail::make_writer_field(spec);
+    SHiP::detail::writer_field_t::view_t view(field);
     for (std::size_t ix = 0; ix < kN; ++ix) {
-        float const x = ship::detail::grid_pos(kMin, kMax, kN, ix);
+        float const x = SHiP::detail::grid_pos(kMin, kMax, kN, ix);
         for (std::size_t iy = 0; iy < kN; ++iy) {
-            float const y = ship::detail::grid_pos(kMin, kMax, kN, iy);
+            float const y = SHiP::detail::grid_pos(kMin, kMax, kN, iy);
             for (std::size_t iz = 0; iz < kN; ++iz) {
-                float const z = ship::detail::grid_pos(kMin, kMax, kN, iz);
+                float const z = SHiP::detail::grid_pos(kMin, kMax, kN, iz);
                 auto& p = view.at(x, y, z);
                 auto const B = fill(x, y, z);
                 p[0] = B[0];
@@ -63,7 +63,7 @@ struct TempCvf {
 TEST_CASE("CovfieFieldSource.RoundtripConstantField", "[field_source]") {
     TempCvf tmp("roundtrip_constant");
     WriteField(tmp.path, [](float, float, float) { return std::array{0.0f, 1.5f, 0.0f}; });
-    auto eval = ship::loadCovfieField(tmp.path.string());
+    auto eval = SHiP::loadCovfieField(tmp.path.string());
     REQUIRE(eval);
 
     using namespace mp_units::si;
@@ -90,7 +90,7 @@ TEST_CASE("CovfieFieldSource.ClampsToBoundaryValue", "[field_source]") {
     // By varies linearly with x so out-of-bounds garbage cannot masquerade as
     // the expected value: By(x) = 0.1 * x Tesla, i.e. -1 T .. +1 T.
     WriteField(tmp.path, [](float x, float, float) { return std::array{0.0f, 0.1f * x, 0.0f}; });
-    auto eval = ship::loadCovfieField(tmp.path.string());
+    auto eval = SHiP::loadCovfieField(tmp.path.string());
     REQUIRE(eval);
 
     using namespace mp_units::si;
@@ -112,11 +112,11 @@ TEST_CASE("CovfieFieldSource.ClampsToBoundaryValue", "[field_source]") {
 TEST_CASE("CovfieFieldSource.SourceAggregatesRegions", "[field_source]") {
     TempCvf tmp("aggregates_regions");
     WriteField(tmp.path, [](float, float, float) { return std::array{0.0f, 1.5f, 0.0f}; });
-    std::vector<ship::CovfieFieldSource::MagnetConfig> magnets = {
+    std::vector<SHiP::CovfieFieldSource::MagnetConfig> magnets = {
         {"MagA", "MuonShield", tmp.path.string()},
         {"MagB", "Spectrometer", tmp.path.string()},
     };
-    ship::CovfieFieldSource src(std::move(magnets));
+    SHiP::CovfieFieldSource src(std::move(magnets));
     auto const& regs = src.regions();
     REQUIRE(regs.size() == 2u);
     CHECK(regs[0].name == "MagA");

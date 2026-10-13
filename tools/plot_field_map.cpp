@@ -34,7 +34,7 @@
 
 namespace {
 
-using ship::IFieldEvaluator;
+using SHiP::IFieldEvaluator;
 
 /// B_y [T] at (x, y, z) [mm] through the public evaluator interface.
 double byAt(IFieldEvaluator const& eval, double x_mm, double y_mm, double z_mm) {
@@ -78,13 +78,13 @@ int main(int argc, char* argv[]) {
     std::string const out_path = argv[3];
 
     std::shared_ptr<IFieldEvaluator> eval;
-    ship::FieldMapGrid grid;
-    ship::FieldMapSymmetry symmetry;
+    SHiP::FieldMapGrid grid;
+    SHiP::FieldMapSymmetry symmetry;
     try {
-        auto map = ship::readFieldMap(map_path, map_name);
+        auto map = SHiP::readFieldMap(map_path, map_name);
         grid = map.grid;
         symmetry = map.symmetry;
-        eval = ship::makeFieldEvaluator(map);
+        eval = SHiP::makeFieldEvaluator(map);
     } catch (std::exception const& e) {
         std::cerr << "error: " << e.what() << '\n';
         return 1;

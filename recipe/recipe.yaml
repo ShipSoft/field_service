@@ -51,7 +51,7 @@ outputs:
       - make
       host:
       - mp-units
-      - shipdatamodel
+      - shipdatamodel >=0.6.0
       - geant4
       # Geant4Config.cmake's find_dependency(EXPAT 2.8.1) needs the expat
       # headers; geant4's qt_* builds only pull in libexpat at runtime.
@@ -84,7 +84,7 @@ outputs:
         # configure time, which requires listing them here rather than
         # relying on their run_exports alone.
         - mp-units
-        - shipdatamodel
+        - shipdatamodel >=0.6.0
       run_exports:
         - ${{ pin_subpackage('field-service-core', upper_bound='x.x') }}
       # The shared staging host pulls geant4 + root_base for the g4-adapter and

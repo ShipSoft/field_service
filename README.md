@@ -36,19 +36,19 @@ An [automatic class reference](https://shipsoft.github.io/field_service/) is bui
 ## Layout
 
 - `docs/field_map_format.md`: specification of the field-map file format.
-- `include/FieldService/IFieldSource.h`: interface (point-query evaluator,
+- `include/SHiP/FieldService/IFieldSource.h`: interface (point-query evaluator,
   list of named regions tagged by host-geometry volume name).
-- `include/FieldService/FieldMap.h`: in-memory map (grid, symmetry, values,
+- `include/SHiP/FieldService/FieldMap.h`: in-memory map (grid, symmetry, values,
   provenance), `makeFieldEvaluator`, and the `translated` and `zeroOutside`
   wrappers that place a map and set its field outside the grid. Core, no ROOT.
-- `include/FieldService/FieldMapIO.h`: read and write map files, and
+- `include/SHiP/FieldService/FieldMapIO.h`: read and write map files, and
   `FieldMapSource`, which loads one map per magnet. MapIO component.
-- `include/FieldService/CovfieFieldSource.h`: deprecated source reading covfie
+- `include/SHiP/FieldService/CovfieFieldSource.h`: deprecated source reading covfie
   `.cvf` files, kept for one release while consumers move to
   `FieldMapSource`.
-- `include/FieldService/G4MagFieldAdapter.h`: Geant4 adapter, built when
+- `include/SHiP/FieldService/G4MagFieldAdapter.h`: Geant4 adapter, built when
   `BUILD_G4_ADAPTER=ON`.
-- `include/FieldService/ActsFieldAdapter.h`: ACTS adapter, built when
+- `include/SHiP/FieldService/ActsFieldAdapter.h`: ACTS adapter, built when
   `BUILD_ACTS_ADAPTER=ON`.
 - `tools/` (built with MapIO):
   - `fairship_to_fieldmap` converts FairShip's legacy ROOT field-map format;
