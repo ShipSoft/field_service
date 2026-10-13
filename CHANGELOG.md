@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-10-13
+
+### Bug fixes
+
+- Ship and use the canonical SHiP/FieldService headers
+
+### Refactor
+
+- [**breaking**] Move the field service into the SHiP namespace
+
+### Build
+
+- *(recipe)* Vendor covfie v0.16.0
+- Lock shipdatamodel 0.6.0
 ## [0.3.0] - 2026-10-13
 
 ### Features
@@ -26,7 +40,6 @@ All notable changes to this project will be documented in this file.
 ### Build
 
 - Get Catch2 from conda-forge instead of FetchContent
-
 ## [0.2.0] - 2026-10-01
 
 ### Features
@@ -83,7 +96,6 @@ All notable changes to this project will be documented in this file.
 - Drop redundant Geant4 include dirs from exported adapter target
 - Re-lock shipdatamodel to 0.3.0 for SHiP::SHiPUnits
 - Add explicit expat dependency for Geant4
-
 ## [0.1.0] - 2026-06-18
 
 ### Features
