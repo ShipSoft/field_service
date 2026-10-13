@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    ship::FieldMap map;
+    SHiP::FieldMap map;
     map.name = argv[2];
     map.grid.min = {args[3], args[5], args[7]};
     map.grid.max = {args[4], args[6], args[8]};
@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
     map.provenance.producer = "generate_constant_fieldmap " SHIPFIELD_VERSION;
 
     try {
-        ship::writeFieldMaps(out_path, std::span{&map, 1});
+        SHiP::writeFieldMaps(out_path, std::span{&map, 1});
     } catch (std::exception const& e) {
         std::cerr << "error: " << e.what() << '\n';
         usage(argv[0]);

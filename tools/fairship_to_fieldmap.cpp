@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
     std::string name;
     std::string symmetry = "none";
     std::string comment;
-    ship::FieldMapWriteOptions options;
+    SHiP::FieldMapWriteOptions options;
     std::array<std::string, 2> paths;
     std::size_t n_paths = 0;
     try {
@@ -128,7 +128,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    ship::FieldMap map;
+    SHiP::FieldMap map;
     map.name = name.empty() ? std::filesystem::path(in_path).stem().string() : name;
     map.grid.min = min;
     map.grid.max = max;
@@ -154,7 +154,7 @@ int main(int argc, char** argv) {
         map.grid.n[i] = static_cast<std::uint32_t>(steps + 1);
     }
     if (symmetry == "quadrant_dipole")
-        map.symmetry = ship::FieldMapSymmetry::quadrantDipole();
+        map.symmetry = SHiP::FieldMapSymmetry::quadrantDipole();
 
     auto const total = map.grid.size();
     std::cout << "Grid: " << map.grid.n[0] << " x " << map.grid.n[1] << " x " << map.grid.n[2]
@@ -187,7 +187,7 @@ int main(int argc, char** argv) {
     map.provenance.producer = "fairship_to_fieldmap " SHIPFIELD_VERSION;
 
     try {
-        ship::writeFieldMaps(out_path, std::span{&map, 1}, options);
+        SHiP::writeFieldMaps(out_path, std::span{&map, 1}, options);
     } catch (std::exception const& e) {
         std::cerr << "error: " << e.what() << '\n';
         return 1;

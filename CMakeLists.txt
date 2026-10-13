@@ -32,9 +32,9 @@ option(BUILD_TOOLS "Build the field-map conversion / dump utilities" ON)
 # ----------------------------------------------------------------------------
 
 find_package(mp-units CONFIG REQUIRED)
-# Canonical ShipSoft quantity types (SHiP/Units.hpp, SHiP::SHiPUnits target);
+# Canonical ShipSoft quantity types (SHiP/Units.hpp, SHiP::Units target);
 # headers-only, no ROOT linkage.
-find_package(SHiPDataModel CONFIG REQUIRED)
+find_package(SHiPDataModel 0.6 CONFIG REQUIRED)
 
 cmake_path(GET mp-units_DIR PARENT_PATH _d)
 cmake_path(GET _d PARENT_PATH _d)
@@ -61,6 +61,8 @@ FetchContent_MakeAvailable(covfie)
 # ----------------------------------------------------------------------------
 
 add_library(SHiPFieldService src/CovfieFieldSource.cpp src/FieldMap.cpp)
+set_target_properties(SHiPFieldService PROPERTIES EXPORT_NAME FieldService)
+add_library(SHiP::FieldService ALIAS SHiPFieldService)
 
 target_include_directories(
     SHiPFieldService
@@ -71,7 +73,7 @@ target_include_directories(
 
 target_link_libraries(
     SHiPFieldService
-    PUBLIC mp-units::mp-units SHiP::SHiPUnits
+    PUBLIC mp-units::mp-units SHiP::Units
     PRIVATE covfie::core covfie::cpu
 )
 
@@ -85,7 +87,11 @@ if(BUILD_MAPIO)
     find_package(ROOT 6.36 REQUIRED COMPONENTS ROOTNTuple)
 
     add_library(SHiPFieldServiceMapIO src/FieldMapIO.cpp)
-    set_target_properties(SHiPFieldServiceMapIO PROPERTIES EXPORT_NAME MapIO)
+    set_target_properties(
+        SHiPFieldServiceMapIO
+        PROPERTIES EXPORT_NAME FieldServiceMapIO
+    )
+    add_library(SHiP::FieldServiceMapIO ALIAS SHiPFieldServiceMapIO)
     target_include_directories(
         SHiPFieldServiceMapIO
         PUBLIC
@@ -116,8 +122,9 @@ if(BUILD_G4_ADAPTER)
     add_library(SHiPFieldServiceG4Adapter INTERFACE)
     set_target_properties(
         SHiPFieldServiceG4Adapter
-        PROPERTIES EXPORT_NAME G4Adapter
+        PROPERTIES EXPORT_NAME FieldServiceG4Adapter
     )
+    add_library(SHiP::FieldServiceG4Adapter ALIAS SHiPFieldServiceG4Adapter)
     target_include_directories(
         SHiPFieldServiceG4Adapter
         INTERFACE
@@ -145,8 +152,9 @@ if(BUILD_ACTS_ADAPTER)
     add_library(SHiPFieldServiceActsAdapter INTERFACE)
     set_target_properties(
         SHiPFieldServiceActsAdapter
-        PROPERTIES EXPORT_NAME ActsAdapter
+        PROPERTIES EXPORT_NAME FieldServiceActsAdapter
     )
+    add_library(SHiP::FieldServiceActsAdapter ALIAS SHiPFieldServiceActsAdapter)
     target_include_directories(
         SHiPFieldServiceActsAdapter
         INTERFACE
@@ -195,7 +203,7 @@ install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(
     EXPORT SHiPFieldServiceTargets
     FILE SHiPFieldServiceTargets.cmake
-    NAMESPACE SHiPFieldService::
+    NAMESPACE SHiP::
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/SHiPFieldService
 )
 
@@ -207,7 +215,7 @@ if(BUILD_G4_ADAPTER)
     install(
         EXPORT SHiPFieldServiceG4AdapterTargets
         FILE SHiPFieldServiceG4AdapterTargets.cmake
-        NAMESPACE SHiPFieldService::
+        NAMESPACE SHiP::
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/SHiPFieldService
     )
 endif()
@@ -220,7 +228,7 @@ if(BUILD_ACTS_ADAPTER)
     install(
         EXPORT SHiPFieldServiceActsAdapterTargets
         FILE SHiPFieldServiceActsAdapterTargets.cmake
-        NAMESPACE SHiPFieldService::
+        NAMESPACE SHiP::
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/SHiPFieldService
     )
 endif()
@@ -235,7 +243,7 @@ if(BUILD_MAPIO)
     install(
         EXPORT SHiPFieldServiceMapIOTargets
         FILE SHiPFieldServiceMapIOTargets.cmake
-        NAMESPACE SHiPFieldService::
+        NAMESPACE SHiP::
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/SHiPFieldService
     )
 endif()

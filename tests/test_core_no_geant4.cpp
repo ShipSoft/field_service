@@ -12,13 +12,13 @@
 
 int main() {
     // Touching the public types is sufficient — we don't need to load a map.
-    ship::CovfieFieldSource src({});
-    ship::FieldMap map;
+    SHiP::CovfieFieldSource src({});
+    SHiP::FieldMap map;
     map.name = "smoke";
     map.grid = {{0, 0, 0}, {1, 1, 1}, {2, 2, 2}};
     map.bx.assign(8, 0.0f);
     map.by.assign(8, 1.0f);
     map.bz.assign(8, 0.0f);
-    auto const eval = ship::makeFieldEvaluator(map);
+    auto const eval = SHiP::makeFieldEvaluator(map);
     return src.regions().empty() && eval ? 0 : 1;
 }

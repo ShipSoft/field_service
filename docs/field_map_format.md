@@ -7,7 +7,7 @@ SPDX-License-Identifier: LGPL-3.0-or-later
 # SHiP field-map format, version 1.0
 
 This document specifies the file format SHiP software uses to store magnetic
-field maps. The reference reader and writer are in `FieldService/FieldMapIO.h`
+field maps. The reference reader and writer are in `SHiP/FieldService/FieldMapIO.h`
 (the `SHiPFieldService::MapIO` CMake component).
 
 ## Why a SHiP format

@@ -24,7 +24,7 @@
 #include <utility>
 #include <vector>
 
-namespace ship {
+namespace SHiP {
 
 namespace {
 
@@ -226,4 +226,4 @@ FieldMapSource::FieldMapSource(std::vector<MagnetConfig> magnets) {
     }
 }
 
-}  // namespace ship
+}  // namespace SHiP

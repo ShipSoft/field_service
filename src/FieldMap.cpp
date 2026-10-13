@@ -15,7 +15,7 @@
 #include <utility>
 #include <vector>
 
-namespace ship {
+namespace SHiP {
 
 std::string resolveFieldMapPath(std::string const& path) {
     if (std::filesystem::exists(path))
@@ -164,4 +164,4 @@ std::shared_ptr<IFieldEvaluator> zeroOutside(std::shared_ptr<IFieldEvaluator> in
     return std::make_shared<ZeroOutsideEvaluator>(std::move(inner), box);
 }
 
-}  // namespace ship
+}  // namespace SHiP

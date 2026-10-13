@@ -20,7 +20,7 @@
 #include <utility>
 #include <vector>
 
-namespace ship {
+namespace SHiP {
 
 namespace {
 
@@ -119,4 +119,4 @@ CovfieFieldSource::CovfieFieldSource(std::vector<MagnetConfig> magnets) {
     }
 }
 
-}  // namespace ship
+}  // namespace SHiP

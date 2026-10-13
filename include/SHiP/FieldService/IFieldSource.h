@@ -1,0 +1,58 @@
+// SPDX-FileCopyrightText: 2026 CERN for the benefit of the SHiP Collaboration
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
+
+#include <SHiP/Units.hpp>
+#include <array>
+#include <memory>
+#include <string>
+#include <vector>
+
+namespace SHiP {
+
+/// Framework-agnostic point-query evaluator for one magnetic field region.
+///
+/// Implementations must be thread-safe; covfie-backed evaluators hold an
+/// immutable field and a single const view, so `at()` is safe to call from
+/// any thread and allocation-free on the hot path.
+class IFieldEvaluator {
+   public:
+    // Aliases of the canonical ShipSoft quantity types (SHiP/Units.hpp);
+    // kept for source compatibility with existing implementations.
+    using pos_q = SHiP::Length;
+    using field_q = SHiP::MagneticField;
+
+    virtual ~IFieldEvaluator() = default;
+
+    /// Return {Bx, By, Bz} in Tesla at position (x, y, z) in the evaluator's
+    /// frame. Evaluators from `makeFieldEvaluator` and `loadFieldMap` use the
+    /// map's local frame; the regions of `FieldMapSource` apply the magnet's
+    /// translation and take global positions.
+    /// Behaviour outside the mapped region is implementation-defined; map
+    /// evaluators clamp to the boundary value.
+    [[nodiscard]] virtual std::array<field_q, 3> at(pos_q x, pos_q y, pos_q z) const = 0;
+};
+
+/// One magnet's worth of field, tagged by a host-geometry volume pattern.
+///
+/// `volume_pattern` is a substring match against the host's volume name store
+/// (Geant4 `G4LogicalVolumeStore`, or equivalent for reco). The host is
+/// responsible for installing the field on each matching volume.
+struct FieldRegion {
+    std::string name;
+    std::string volume_pattern;
+    std::shared_ptr<IFieldEvaluator> field;
+};
+
+/// Source of one or more named field regions. Mirrors the shape of
+/// `IGeometrySource`/`IGeometryService` in the geometry repo.
+class IFieldSource {
+   public:
+    virtual ~IFieldSource() = default;
+
+    /// Idempotent. Ownership of the evaluators stays with the source.
+    [[nodiscard]] virtual std::vector<FieldRegion> const& regions() const = 0;
+};
+
+}  // namespace SHiP

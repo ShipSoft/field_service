@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
         std::cerr << "Usage: " << argv[0] << " <out.root>\n";
         return 1;
     }
-    auto const maps = ship::test::referenceMaps();
-    ship::writeFieldMaps(argv[1], maps);
+    auto const maps = SHiP::test::referenceMaps();
+    SHiP::writeFieldMaps(argv[1], maps);
     return 0;
 }

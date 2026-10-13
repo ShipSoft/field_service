@@ -26,7 +26,7 @@ void usage(const char* prog) {
               << "'x y z Bx By Bz' (mm, Tesla) to stdout.\n";
 }
 
-void print(ship::FieldMap const& m) {
+void print(SHiP::FieldMap const& m) {
     static constexpr char const* kAxis = "xyz";
     std::cout << "map '" << m.name << "'\n";
     for (std::size_t a = 0; a < 3; ++a) {
@@ -53,11 +53,11 @@ int main(int argc, char** argv) {
     }
     try {
         if (argc == 2) {
-            for (auto const& m : ship::readFieldMaps(argv[1]))
+            for (auto const& m : SHiP::readFieldMaps(argv[1]))
                 print(m);
             return 0;
         }
-        auto const eval = ship::makeFieldEvaluator(ship::readFieldMap(argv[1], argv[2]));
+        auto const eval = SHiP::makeFieldEvaluator(SHiP::readFieldMap(argv[1], argv[2]));
         using namespace mp_units::si::unit_symbols;
         double x, y, z;
         while (std::cin >> x >> y >> z) {
