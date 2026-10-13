@@ -104,6 +104,17 @@ cmake -S . -B build -DCMAKE_PREFIX_PATH=/path/to/catch2
 To configure without the tests, and so without Catch2, pass
 `-DBUILD_TESTING=OFF`.
 
+The optional components are on by default, and CMake looks for their
+dependencies at configure time: the ActsAdapter needs Acts (Core), the
+G4Adapter needs Geant4 and MapIO needs ROOT. Configuring fails if one of them is
+missing. To build without Acts, turn the adapter off:
+
+```bash
+cmake -S . -B build -DBUILD_ACTS_ADAPTER=OFF
+```
+
+`-DBUILD_G4_ADAPTER=OFF` does the same for Geant4.
+
 ## Develop
 
 Install the pre-commit hooks (covers `clang-format`, `gersemi`,
