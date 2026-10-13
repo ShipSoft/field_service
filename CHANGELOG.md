@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-10-13
+
+### Features
+
+- Add placement and domain helpers for field evaluators
+- Add an ACTS adapter component
+
+### Bug fixes
+
+- *(release)* Tag the release only after it lands on main
+
+### Documentation
+
+- Say which frame IFieldEvaluator::at takes
+- Note the Catch2 requirement for direct CMake builds
+- Say which components need their dependencies at configure time
+
+### Styling
+
+- Address clang-tidy findings in placement helpers
+
+### Build
+
+- Get Catch2 from conda-forge instead of FetchContent
+
 ## [0.2.0] - 2026-10-01
 
 ### Features
