@@ -5,10 +5,10 @@
 
 // In-memory form of a SHiP field map (format specified in
 // docs/field_map_format.md). This header has no ROOT or covfie dependency:
-// file I/O lives in the MapIO component (FieldService/FieldMapIO.h), and
+// file I/O lives in the MapIO component (SHiP/FieldService/FieldMapIO.h), and
 // evaluation is built from a FieldMap via makeFieldEvaluator().
 
-#include "FieldService/IFieldSource.h"
+#include "SHiP/FieldService/IFieldSource.h"
 
 #include <array>
 #include <cstddef>
