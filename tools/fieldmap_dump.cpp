@@ -13,6 +13,7 @@
 #include "SHiP/FieldService/FieldMapIO.h"
 
 #include <exception>
+#include <format>
 #include <iostream>
 #include <mp-units/systems/si.h>
 #include <string>
@@ -62,8 +63,10 @@ int main(int argc, char** argv) {
         double x, y, z;
         while (std::cin >> x >> y >> z) {
             auto const B = eval->at(x * mm, y * mm, z * mm);
-            std::cout << x << ' ' << y << ' ' << z << ' ' << B[0].numerical_value_in(T) << ' '
-                      << B[1].numerical_value_in(T) << ' ' << B[2].numerical_value_in(T) << '\n';
+            // Shortest round-trip form: the 6 significant digits iostreams
+            // default to are too coarse for closure tests.
+            std::cout << std::format("{} {} {} {} {} {}\n", x, y, z, B[0].numerical_value_in(T),
+                                     B[1].numerical_value_in(T), B[2].numerical_value_in(T));
         }
     } catch (std::exception const& e) {
         std::cerr << "error: " << e.what() << '\n';
