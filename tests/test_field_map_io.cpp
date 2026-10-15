@@ -18,18 +18,21 @@
 #include <cmath>
 #include <cstdint>
 #include <filesystem>
+#include <random>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
 namespace {
 
-/// Temp file unique to a test, removed on scope exit.
+/// Temp file unique to a test and to this run (concurrent ctest runs share
+/// the temp directory), removed on scope exit.
 struct TempFile {
     std::filesystem::path path;
     explicit TempFile(char const* name)
         : path(std::filesystem::temp_directory_path() /
-               (std::string("field_service_") + name + ".root")) {}
+               (std::string("field_service_") + name + "_" +
+                std::to_string(std::random_device{}()) + ".root")) {}
     ~TempFile() { std::filesystem::remove(path); }
 };
 
