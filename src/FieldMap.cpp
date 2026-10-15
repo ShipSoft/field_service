@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "FieldService/FieldMap.h"
+#include "SHiP/FieldService/FieldMap.h"
 
 #include <cmath>
 #include <cstddef>

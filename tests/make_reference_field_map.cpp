@@ -6,7 +6,7 @@
 // format version to create the frozen tests/data/field_map_v<major>.<minor>.root;
 // never regenerate an existing reference file.
 
-#include "FieldService/FieldMapIO.h"
+#include "SHiP/FieldService/FieldMapIO.h"
 #include "reference_maps.h"
 
 #include <iostream>

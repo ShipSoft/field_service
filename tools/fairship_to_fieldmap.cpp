@@ -18,8 +18,8 @@
 // Placement is not part of the format; it belongs to the consumer's
 // configuration.
 
-#include "FieldService/FieldMap.h"
-#include "FieldService/FieldMapIO.h"
+#include "SHiP/FieldService/FieldMap.h"
+#include "SHiP/FieldService/FieldMapIO.h"
 
 #include <TFile.h>
 #include <TTreeReader.h>

@@ -6,9 +6,9 @@
 // If the Core library accidentally exposes a Geant4 or ROOT dependency
 // through its public interface, the link step here fails.
 
-#include "FieldService/CovfieFieldSource.h"
-#include "FieldService/FieldMap.h"
-#include "FieldService/IFieldSource.h"
+#include "SHiP/FieldService/CovfieFieldSource.h"
+#include "SHiP/FieldService/FieldMap.h"
+#include "SHiP/FieldService/IFieldSource.h"
 
 int main() {
     // Touching the public types is sufficient — we don't need to load a map.

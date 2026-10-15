@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "FieldService/CovfieFieldSource.h"
+#include "SHiP/FieldService/CovfieFieldSource.h"
 #include "detail/covfie_chains.h"
 
 #include <array>

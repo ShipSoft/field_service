@@ -5,7 +5,7 @@
 // MapIO tests: write/read round trips, rejection of files this reader must
 // not interpret, and FieldMapSource.
 
-#include "FieldService/FieldMapIO.h"
+#include "SHiP/FieldService/FieldMapIO.h"
 #include "reference_maps.h"
 
 #include <ROOT/RNTupleModel.hxx>

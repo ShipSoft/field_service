@@ -6,7 +6,7 @@
 // fails, the change broke files that already exist: fix the reader, never the
 // reference file.
 
-#include "FieldService/FieldMapIO.h"
+#include "SHiP/FieldService/FieldMapIO.h"
 #include "reference_maps.h"
 
 #include <catch2/catch_test_macros.hpp>

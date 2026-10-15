@@ -8,7 +8,7 @@
 // reproduces exactly, so readers can be checked at arbitrary points and not
 // only at nodes.
 
-#include "FieldService/FieldMap.h"
+#include "SHiP/FieldService/FieldMap.h"
 
 #include <array>
 #include <cstddef>

@@ -13,9 +13,9 @@
 // <out.root> with one PDF per plot alongside it. The plot range defaults to
 // the map's grid, reflected on mirrored axes.
 
-#include "FieldService/FieldMap.h"
-#include "FieldService/FieldMapIO.h"
-#include "FieldService/IFieldSource.h"
+#include "SHiP/FieldService/FieldMap.h"
+#include "SHiP/FieldService/FieldMapIO.h"
+#include "SHiP/FieldService/IFieldSource.h"
 
 #include <TCanvas.h>
 #include <TFile.h>

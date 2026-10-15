@@ -13,8 +13,8 @@
 // All B values in Tesla, all positions in mm. The grid is 2×2×2 (the smallest
 // trilinear box); inside the bounds the field is constant {Bx, By, Bz}.
 
-#include "FieldService/FieldMap.h"
-#include "FieldService/FieldMapIO.h"
+#include "SHiP/FieldService/FieldMap.h"
+#include "SHiP/FieldService/FieldMapIO.h"
 
 #include <array>
 #include <cstddef>
