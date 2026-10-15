@@ -8,10 +8,12 @@
 #include "detail/covfie_chains.h"
 
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <limits>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -41,6 +43,12 @@ class CovfieEvaluator final : public IFieldEvaluator {
         std::array<float, 3> p{static_cast<float>(x.numerical_value_in(milli<metre>)),
                                static_cast<float>(y.numerical_value_in(milli<metre>)),
                                static_cast<float>(z.numerical_value_in(milli<metre>))};
+        // covfie's clamp passes NaN through and the interpolator would then
+        // cast it to a grid index, which is undefined behaviour.
+        if (std::isnan(p[0]) || std::isnan(p[1]) || std::isnan(p[2])) {
+            auto const nan = std::numeric_limits<float>::quiet_NaN() * tesla;
+            return {nan, nan, nan};
+        }
         // Fold negative coordinates on mirrored axes into the stored half and
         // collect the per-component sign flips that reflection induces.
         std::array<float, 3> sign{1.0f, 1.0f, 1.0f};
