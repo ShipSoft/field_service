@@ -12,6 +12,7 @@
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <random>
 #include <string>
 #include <vector>
 
@@ -48,13 +49,15 @@ void WriteField(std::filesystem::path const& path, FillFn const& fill) {
     field.dump(out);
 }
 
-/// Temp .cvf path unique to a test, removed on scope exit (also on a Catch2
-/// REQUIRE that throws out of the test body).
+/// Temp .cvf path unique to a test and to this run (concurrent ctest runs
+/// share the temp directory), removed on scope exit (also on a Catch2 REQUIRE
+/// that throws out of the test body).
 struct TempCvf {
     std::filesystem::path path;
     explicit TempCvf(char const* name)
         : path(std::filesystem::temp_directory_path() /
-               (std::string("field_service_") + name + ".cvf")) {}
+               (std::string("field_service_") + name + "_" +
+                std::to_string(std::random_device{}()) + ".cvf")) {}
     ~TempCvf() { std::filesystem::remove(path); }
 };
 
