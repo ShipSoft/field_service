@@ -23,6 +23,7 @@
 #include <TH2F.h>
 
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <exception>
 #include <filesystem>
@@ -30,6 +31,7 @@
 #include <iostream>
 #include <memory>
 #include <mp-units/systems/si.h>
+#include <stdexcept>
 #include <string>
 
 namespace {
@@ -54,6 +56,16 @@ void fillBy(TH2F& h, IFieldEvaluator const& eval,
             h.SetBinContent(iu, iv, byAt(eval, p[0], p[1], p[2]));
         }
     }
+}
+
+/// Parse all of `s` as a finite number; throw otherwise.
+double parseFinite(char const* s) {
+    std::size_t consumed = 0;
+    double const v = std::stod(s, &consumed);
+    if (s[consumed] != '\0' || !std::isfinite(v)) {
+        throw std::invalid_argument{std::string("invalid number '") + s + "'"};
+    }
+    return v;
 }
 
 void usage(char const* prog) {
@@ -99,10 +111,11 @@ int main(int argc, char* argv[]) {
     if (argc == 10) {
         try {
             for (std::size_t a = 0; a < 3; ++a) {
-                lo[a] = std::stod(argv[4 + 2 * a]);
-                hi[a] = std::stod(argv[5 + 2 * a]);
+                lo[a] = parseFinite(argv[4 + (2 * a)]);
+                hi[a] = parseFinite(argv[5 + (2 * a)]);
             }
-        } catch (std::exception const&) {
+        } catch (std::exception const& e) {
+            std::cerr << "error: " << e.what() << '\n';
             usage(argv[0]);
             return 1;
         }
