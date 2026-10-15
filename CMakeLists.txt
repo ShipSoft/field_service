@@ -258,7 +258,9 @@ configure_package_config_file(
 write_basic_package_version_file(
     ${CMAKE_CURRENT_BINARY_DIR}/SHiPFieldServiceConfigVersion.cmake
     VERSION ${PROJECT_VERSION}
-    COMPATIBILITY SameMajorVersion
+    # 0.x releases break the API, so a 0.x request accepts only its own minor
+    # version. Switch to SameMajorVersion at 1.0.
+    COMPATIBILITY SameMinorVersion
 )
 
 install(
