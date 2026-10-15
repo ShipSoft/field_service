@@ -5,8 +5,8 @@
 // ActsFieldAdapter: unit conversion, composition with the placement helpers,
 // and failure on anomalous lookups.
 
-#include "FieldService/ActsFieldAdapter.h"
-#include "FieldService/FieldMap.h"
+#include "SHiP/FieldService/ActsFieldAdapter.h"
+#include "SHiP/FieldService/FieldMap.h"
 #include "reference_maps.h"
 
 #include <Acts/Definitions/Units.hpp>

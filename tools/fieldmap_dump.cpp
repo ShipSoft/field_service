@@ -9,8 +9,8 @@
 // the library evaluator returns them (trilinear interpolation, symmetry
 // applied, clamped at the boundary), for human inspection and closure tests.
 
-#include "FieldService/FieldMap.h"
-#include "FieldService/FieldMapIO.h"
+#include "SHiP/FieldService/FieldMap.h"
+#include "SHiP/FieldService/FieldMapIO.h"
 
 #include <exception>
 #include <iostream>

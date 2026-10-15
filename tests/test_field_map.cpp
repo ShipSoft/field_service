@@ -4,7 +4,7 @@
 //
 // Core (ROOT-free) tests: FieldMap validation and makeFieldEvaluator.
 
-#include "FieldService/FieldMap.h"
+#include "SHiP/FieldService/FieldMap.h"
 #include "reference_maps.h"
 
 #include <array>
@@ -189,8 +189,8 @@ TEST_CASE("FieldMap.EvaluatorReturnsNaNForNaNPositions", "[field_map]") {
     for (auto const& map : {SHiP::test::uniformMap(), SHiP::test::dipoleMap()}) {
         INFO("map " << map.name);
         auto const eval = SHiP::makeFieldEvaluator(map);
-        for (auto const& p : {std::array{nan, 0.0, 0.0}, std::array{0.0, -nan, 0.0},
-                              std::array{0.0, 0.0, nan}}) {
+        for (auto const& p :
+             {std::array{nan, 0.0, 0.0}, std::array{0.0, -nan, 0.0}, std::array{0.0, 0.0, nan}}) {
             auto const B = evalAt(*eval, p[0], p[1], p[2]);
             CHECK(std::isnan(B[0]));
             CHECK(std::isnan(B[1]));

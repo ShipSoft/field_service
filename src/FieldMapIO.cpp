@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "FieldService/FieldMapIO.h"
+#include "SHiP/FieldService/FieldMapIO.h"
 
 #include <ROOT/RError.hxx>
 #include <ROOT/RField.hxx>
