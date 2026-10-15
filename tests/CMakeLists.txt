@@ -47,6 +47,15 @@ if(BUILD_ACTS_ADAPTER)
     catch_discover_tests(test_acts_adapter)
 endif()
 
+if(BUILD_G4_ADAPTER)
+    add_executable(test_g4_adapter test_g4_adapter.cpp)
+    target_link_libraries(
+        test_g4_adapter
+        PRIVATE SHiPFieldServiceG4Adapter Catch2::Catch2WithMain
+    )
+    catch_discover_tests(test_g4_adapter)
+endif()
+
 if(BUILD_MAPIO)
     # Writes the frozen tests/data/field_map_v<major>.<minor>.root once per
     # format version; see tests/data/README.md. Not run by ctest.
