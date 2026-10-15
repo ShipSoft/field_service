@@ -117,8 +117,8 @@ if(BUILD_G4_ADAPTER)
     find_package(Geant4 REQUIRED)
 
     # Header-only adapter — expose as an INTERFACE library so consumers pull in
-    # Geant4 transitively. Export name "G4Adapter" so downstream consumers
-    # write SHiPFieldService::G4Adapter.
+    # Geant4 transitively. Downstream consumers write
+    # SHiP::FieldServiceG4Adapter.
     add_library(SHiPFieldServiceG4Adapter INTERFACE)
     set_target_properties(
         SHiPFieldServiceG4Adapter
@@ -148,7 +148,7 @@ if(BUILD_ACTS_ADAPTER)
     find_package(Acts CONFIG REQUIRED COMPONENTS Core)
 
     # Header-only, like the Geant4 adapter: consumers write
-    # SHiPFieldService::ActsAdapter and get Acts::Core transitively.
+    # SHiP::FieldServiceActsAdapter and get Acts::Core transitively.
     add_library(SHiPFieldServiceActsAdapter INTERFACE)
     set_target_properties(
         SHiPFieldServiceActsAdapter
