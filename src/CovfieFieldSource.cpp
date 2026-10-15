@@ -122,7 +122,10 @@ CovfieFieldSource::CovfieFieldSource(std::vector<MagnetConfig> magnets) {
         FieldRegion r;
         r.name = std::move(m.name);
         r.volume_pattern = std::move(m.volume_pattern);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
         r.field = loadCovfieField(m.cvf_file);
+#pragma GCC diagnostic pop
         regions_.push_back(std::move(r));
     }
 }

@@ -16,6 +16,9 @@
 #include <string>
 #include <vector>
 
+// This file tests the deprecated .cvf API.
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 namespace {
 
 constexpr std::size_t kN = 3;

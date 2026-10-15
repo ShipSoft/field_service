@@ -19,12 +19,15 @@ namespace SHiP {
 /// covfie versions. Store maps in the SHiP field-map format
 /// (docs/field_map_format.md) and load them with `FieldMapSource` from the
 /// MapIO component instead. `.cvf` support will be removed in a later release.
-[[nodiscard]] std::shared_ptr<IFieldEvaluator> loadCovfieField(std::string const& cvf_path);
+[[deprecated("use loadFieldMap and the SHiP field-map format"),
+  nodiscard]] std::shared_ptr<IFieldEvaluator>
+loadCovfieField(std::string const& cvf_path);
 
 /// Concrete `IFieldSource` aggregating one covfie-backed evaluator per magnet.
 ///
 /// \deprecated Reads `.cvf` files; see `loadCovfieField`.
-class CovfieFieldSource final : public IFieldSource {
+class [[deprecated("use FieldMapSource and the SHiP field-map format")]] CovfieFieldSource final
+    : public IFieldSource {
    public:
     struct MagnetConfig {
         std::string name;
