@@ -30,7 +30,8 @@ class IFieldEvaluator {
     /// map's local frame; the regions of `FieldMapSource` apply the magnet's
     /// translation and take global positions.
     /// Behaviour outside the mapped region is implementation-defined; map
-    /// evaluators clamp to the boundary value.
+    /// evaluators clamp to the boundary value and return NaN for a NaN
+    /// position.
     [[nodiscard]] virtual std::array<field_q, 3> at(pos_q x, pos_q y, pos_q z) const = 0;
 };
 

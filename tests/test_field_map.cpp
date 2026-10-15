@@ -10,6 +10,7 @@
 #include <array>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
+#include <cmath>
 #include <limits>
 #include <stdexcept>
 
@@ -179,4 +180,21 @@ TEST_CASE("FieldMap.TranslatedShiftsTheOrigin", "[field_map]") {
     auto const inf = std::numeric_limits<double>::infinity();
     CHECK_THROWS_AS(SHiP::translated(local, {0.0, inf, 0.0}), std::invalid_argument);
     CHECK_THROWS_AS(SHiP::translated(nullptr, {1.0, 0.0, 0.0}), std::invalid_argument);
+}
+
+TEST_CASE("FieldMap.EvaluatorReturnsNaNForNaNPositions", "[field_map]") {
+    // A NaN coordinate passes the mirror fold and covfie's clamp unchanged, so
+    // it must be caught before it becomes a grid index.
+    auto const nan = std::numeric_limits<double>::quiet_NaN();
+    for (auto const& map : {SHiP::test::uniformMap(), SHiP::test::dipoleMap()}) {
+        INFO("map " << map.name);
+        auto const eval = SHiP::makeFieldEvaluator(map);
+        for (auto const& p : {std::array{nan, 0.0, 0.0}, std::array{0.0, -nan, 0.0},
+                              std::array{0.0, 0.0, nan}}) {
+            auto const B = evalAt(*eval, p[0], p[1], p[2]);
+            CHECK(std::isnan(B[0]));
+            CHECK(std::isnan(B[1]));
+            CHECK(std::isnan(B[2]));
+        }
+    }
 }
