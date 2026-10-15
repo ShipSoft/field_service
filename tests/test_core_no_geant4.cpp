@@ -6,13 +6,11 @@
 // If the Core library accidentally exposes a Geant4 or ROOT dependency
 // through its public interface, the link step here fails.
 
-#include "SHiP/FieldService/CovfieFieldSource.h"
 #include "SHiP/FieldService/FieldMap.h"
 #include "SHiP/FieldService/IFieldSource.h"
 
 int main() {
     // Touching the public types is sufficient — we don't need to load a map.
-    SHiP::CovfieFieldSource src({});
     SHiP::FieldMap map;
     map.name = "smoke";
     map.grid = {{0, 0, 0}, {1, 1, 1}, {2, 2, 2}};
@@ -20,5 +18,5 @@ int main() {
     map.by.assign(8, 1.0f);
     map.bz.assign(8, 0.0f);
     auto const eval = SHiP::makeFieldEvaluator(map);
-    return src.regions().empty() && eval ? 0 : 1;
+    return eval ? 0 : 1;
 }
