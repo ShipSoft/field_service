@@ -19,15 +19,16 @@ regular grid).
 
 The library has four parts:
 
-- The core library (`SHiPFieldService`) builds evaluators from in-memory maps. It
+- The core library (`SHiP::FieldService`) builds evaluators from in-memory maps. It
   depends on neither ROOT nor Geant4, so reconstruction can use it without
   pulling either in.
-- The MapIO component (`SHiPFieldService::MapIO`, `BUILD_MAPIO`) reads and writes map
+- The MapIO component (`SHiP::FieldServiceMapIO`, `BUILD_MAPIO`) reads and writes map
   files and needs ROOT.
-- The G4Adapter component (`BUILD_G4_ADAPTER`) is a small Geant4 adapter,
-  `G4MagFieldAdapter`.
-- The ActsAdapter component (`BUILD_ACTS_ADAPTER`) is the ACTS counterpart,
-  `ActsFieldAdapter`, an `Acts::MagneticFieldProvider`.
+- The G4Adapter component (`SHiP::FieldServiceG4Adapter`, `BUILD_G4_ADAPTER`) is
+  a small Geant4 adapter, `G4MagFieldAdapter`.
+- The ActsAdapter component (`SHiP::FieldServiceActsAdapter`,
+  `BUILD_ACTS_ADAPTER`) is the ACTS counterpart, `ActsFieldAdapter`,
+  an `Acts::MagneticFieldProvider`.
 
 ## Documentation
 
@@ -131,7 +132,7 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full workflow.
 
 Aegir consumes this via `find_package(SHiPFieldService REQUIRED COMPONENTS
 G4Adapter MapIO)`. The aegir provider plugin `field_map_provider` constructs a
-`ship::FieldMapSource` from jsonnet config and publishes it as a phlex Job
+`SHiP::FieldMapSource` from jsonnet config and publishes it as a phlex Job
 product; the aegir Geant4 module installs a per-magnet `G4FieldManager` on each
 matching logical volume via the adapter.
 
@@ -141,9 +142,9 @@ Reconstruction has no volumes to attach regions to, so it places a single map
 itself and hands ACTS one global field:
 
 ```cpp
-auto const map = ship::readFieldMap(ship::resolveFieldMapPath(file), name);
-auto field = std::make_shared<ship::ActsFieldAdapter>(ship::translated(
-    ship::zeroOutside(ship::makeFieldEvaluator(map), ship::extent(map)), translation));
+auto const map = SHiP::readFieldMap(SHiP::resolveFieldMapPath(file), name);
+auto field = std::make_shared<SHiP::ActsFieldAdapter>(SHiP::translated(
+    SHiP::zeroOutside(SHiP::makeFieldEvaluator(map), SHiP::extent(map)), translation));
 ```
 
 with `find_package(SHiPFieldService REQUIRED COMPONENTS MapIO ActsAdapter)`.

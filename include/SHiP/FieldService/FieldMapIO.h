@@ -5,7 +5,7 @@
 
 // Reader and writer for the SHiP field-map format (docs/field_map_format.md),
 // a ROOT RNTuple named "field_maps" with one entry per map. Part of the MapIO
-// component (SHiPFieldService::MapIO), which depends on ROOT; the core
+// component (SHiP::FieldServiceMapIO), which depends on ROOT; the core
 // library does not.
 
 #include "SHiP/FieldService/FieldMap.h"

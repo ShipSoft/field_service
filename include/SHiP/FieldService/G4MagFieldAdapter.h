@@ -15,7 +15,7 @@
 namespace SHiP {
 
 /// Thin `G4MagneticField` wrapping an `IFieldEvaluator`. Geant4 owns the
-/// `G4FieldManager`/`ChordFinder`; the evaluator carries the per-thread cache.
+/// `G4FieldManager`/`ChordFinder`; the evaluator is immutable and thread-safe.
 class G4MagFieldAdapter final : public G4MagneticField {
    public:
     explicit G4MagFieldAdapter(std::shared_ptr<IFieldEvaluator> eval) : eval_{std::move(eval)} {}
