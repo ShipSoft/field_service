@@ -12,6 +12,7 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <cmath>
 #include <limits>
+#include <ranges>
 #include <stdexcept>
 
 namespace {
@@ -86,15 +87,14 @@ TEST_CASE("FieldMap.EvaluatorInterpolatesAndClamps", "[field_map]") {
     SHiP::FieldMap m;
     m.name = "full";
     m.grid = {{-100, -50, -200}, {100, 50, 200}, {5, 5, 5}};
-    for (std::size_t i = 0; i < 5; ++i)
-        for (std::size_t j = 0; j < 5; ++j)
-            for (std::size_t k = 0; k < 5; ++k) {
-                auto const B = SHiP::test::dipoleField(m.grid.node(0, i), m.grid.node(1, j),
-                                                       m.grid.node(2, k));
-                m.bx.push_back(static_cast<float>(B[0]));
-                m.by.push_back(static_cast<float>(B[1]));
-                m.bz.push_back(static_cast<float>(B[2]));
-            }
+    auto const nodes = std::views::iota(0uz, 5uz);
+    for (auto const [i, j, k] : std::views::cartesian_product(nodes, nodes, nodes)) {
+        auto const B =
+            SHiP::test::dipoleField(m.grid.node(0, i), m.grid.node(1, j), m.grid.node(2, k));
+        m.bx.push_back(static_cast<float>(B[0]));
+        m.by.push_back(static_cast<float>(B[1]));
+        m.bz.push_back(static_cast<float>(B[2]));
+    }
     auto const eval = SHiP::makeFieldEvaluator(m);
     REQUIRE(eval);
 
