@@ -18,6 +18,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <ranges>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -215,15 +216,14 @@ std::shared_ptr<IFieldEvaluator> loadFieldMap(std::string const& file, std::stri
     return eval;
 }
 
-FieldMapSource::FieldMapSource(std::vector<MagnetConfig> magnets) {
-    regions_.reserve(magnets.size());
-    for (auto& m : magnets) {
-        FieldRegion r;
-        r.field = translated(loadFieldMap(m.file, m.map), m.translation);
-        r.name = std::move(m.name);
-        r.volume_pattern = std::move(m.volume_pattern);
-        regions_.push_back(std::move(r));
-    }
-}
+FieldMapSource::FieldMapSource(std::vector<MagnetConfig> magnets)
+    : regions_{magnets | std::views::as_rvalue | std::views::transform([](MagnetConfig m) {
+                   return FieldRegion{
+                       .name = std::move(m.name),
+                       .volume_pattern = std::move(m.volume_pattern),
+                       .field = translated(loadFieldMap(m.file, m.map), m.translation),
+                   };
+               }) |
+               std::ranges::to<std::vector>()} {}
 
 }  // namespace SHiP
