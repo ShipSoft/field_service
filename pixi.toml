@@ -5,7 +5,7 @@
 [workspace]
 name = "field_service"
 description = "SHiP magnetic field service (framework-agnostic, covfie-backed)"
-channels = ["https://prefix.dev/ship", "conda-forge"]
+channels = ["https://prefix.dev/ship-experiment/stable", "conda-forge"]
 platforms = ["linux-64"]
 [dependencies]
 # Required by CovfieFieldSource (find_package mp-units CONFIG REQUIRED).
@@ -84,7 +84,7 @@ clean = "rm -rf build"
 
 # Build this checkout as conda packages (core/g4/tools split) into a local
 # file:// channel that downstream dev environments (e.g. aegir) can resolve
-# ahead of prefix.dev/ship. Driven by recipe/recipe.yaml, a dev twin of
+# ahead of prefix.dev/ship-experiment/stable. Driven by recipe/recipe.yaml, a dev twin of
 # ship-conda-recipes/recipes/field-service — keep the two in lockstep.
 # A pixi-build [package] section would be preferable (source dependencies),
 # but the pixi-build-rattler-build backend does not yet forward the workspace
@@ -129,7 +129,7 @@ git diff --unified=0 --diff-filter=d origin/main -- '*.cpp' '*.hpp' '*.cxx' '*.h
 rattler-build = ">=0.35"
 
 [feature.package.tasks]
-build-local-channel = "rattler-build build --recipe recipe/recipe.yaml --output-dir ../ship-local-channel --channel https://prefix.dev/ship --channel conda-forge"
+build-local-channel = "rattler-build build --recipe recipe/recipe.yaml --output-dir ../ship-local-channel --channel https://prefix.dev/ship-experiment/stable --channel conda-forge"
 
 # Linting / formatting toolchain. prek orchestrates the hooks; the tools come
 # from this environment so versions are tracked in pixi.lock and run identically
