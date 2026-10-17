@@ -9,7 +9,7 @@ SPDX-License-Identifier: LGPL-3.0-or-later
 [![Pixi Build](https://github.com/ShipSoft/field_service/actions/workflows/pixi-build.yml/badge.svg)](https://github.com/ShipSoft/field_service/actions/workflows/pixi-build.yml)
 [![REUSE status](https://api.reuse.software/badge/github.com/ShipSoft/field_service)](https://api.reuse.software/info/github.com/ShipSoft/field_service)
 
-Framework-agnostic C++20 library exposing the SHiP magnetic field maps to
+Framework-agnostic C++23 library exposing the SHiP magnetic field maps to
 simulation (aegir) and reconstruction.
 
 Maps are stored in the [SHiP field-map format](docs/field_map_format.md), a
