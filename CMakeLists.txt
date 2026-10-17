@@ -13,7 +13,12 @@ project(
 )
 
 if(NOT DEFINED CMAKE_CXX_STANDARD)
-    set(CMAKE_CXX_STANDARD 20)
+    set(CMAKE_CXX_STANDARD 23)
+elseif(CMAKE_CXX_STANDARD LESS 23)
+    message(
+        FATAL_ERROR
+        "SHiPFieldService needs C++23 or later, got CMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}"
+    )
 endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -76,6 +81,9 @@ target_link_libraries(
     PUBLIC mp-units::mp-units SHiP::Units
     PRIVATE covfie::core covfie::cpu
 )
+# CMAKE_CXX_STANDARD is directory-scoped and not exported; this carries the
+# requirement to consumers of the installed package.
+target_compile_features(SHiPFieldService PUBLIC cxx_std_23)
 
 # ----------------------------------------------------------------------------
 # Optional MapIO component: reader/writer for the SHiP field-map format
