@@ -25,12 +25,13 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstdio>
 #include <exception>
 #include <filesystem>
 #include <functional>
-#include <iostream>
 #include <memory>
 #include <mp-units/systems/si.h>
+#include <print>
 #include <stdexcept>
 #include <string>
 
@@ -69,13 +70,15 @@ double parseFinite(char const* s) {
 }
 
 void usage(char const* prog) {
-    std::cerr << "Usage: " << prog
-              << " <input.root> <map> <out.root> [<xMin> <xMax> <yMin> <yMax> <zMin> <zMax>]\n"
-              << "       Positions in mm; the range defaults to the map's grid. Writes B_y\n"
-              << "       plots to <out.root> and one PDF per plot next to it. Outside the\n"
-              << "       mapped region the evaluator clamps to the boundary value — a\n"
-              << "       plateau beyond the map bounds is a plotting artefact, not physical\n"
-              << "       fringe field.\n";
+    std::print(stderr,
+               "Usage: {} <input.root> <map> <out.root> [<xMin> <xMax> <yMin> <yMax> <zMin> "
+               "<zMax>]\n"
+               "       Positions in mm; the range defaults to the map's grid. Writes B_y\n"
+               "       plots to <out.root> and one PDF per plot next to it. Outside the\n"
+               "       mapped region the evaluator clamps to the boundary value — a\n"
+               "       plateau beyond the map bounds is a plotting artefact, not physical\n"
+               "       fringe field.\n",
+               prog);
 }
 
 }  // namespace
@@ -98,7 +101,7 @@ int main(int argc, char* argv[]) {
         symmetry = map.symmetry;
         eval = SHiP::makeFieldEvaluator(map);
     } catch (std::exception const& e) {
-        std::cerr << "error: " << e.what() << '\n';
+        std::println(stderr, "error: {}", e.what());
         return 1;
     }
 
@@ -115,7 +118,7 @@ int main(int argc, char* argv[]) {
                 hi[a] = parseFinite(argv[5 + (2 * a)]);
             }
         } catch (std::exception const& e) {
-            std::cerr << "error: " << e.what() << '\n';
+            std::println(stderr, "error: {}", e.what());
             usage(argv[0]);
             return 1;
         }
@@ -123,7 +126,7 @@ int main(int argc, char* argv[]) {
     auto const [xMin, yMin, zMin] = lo;
     auto const [xMax, yMax, zMax] = hi;
     if (xMin >= xMax || yMin >= yMax || zMin >= zMax) {
-        std::cerr << "error: each min must be smaller than the corresponding max\n";
+        std::println(stderr, "error: each min must be smaller than the corresponding max");
         return 1;
     }
 
@@ -157,7 +160,7 @@ int main(int argc, char* argv[]) {
     {
         TFile out(out_path.c_str(), "RECREATE");
         if (out.IsZombie()) {
-            std::cerr << "error: failed to open " << out_path << '\n';
+            std::println(stderr, "error: failed to open {}", out_path);
             return 1;
         }
         gBy_z.Write();
@@ -165,7 +168,7 @@ int main(int argc, char* argv[]) {
         hBy_yz.Write();
         hBy_xy.Write();
     }
-    std::cout << "Wrote " << out_path << " (4 objects)\n";
+    std::println("Wrote {} (4 objects)", out_path);
 
     // ── PDF export ────────────────────────────────────────────────────────
     auto const out_fs = std::filesystem::path(out_path);
@@ -182,7 +185,7 @@ int main(int argc, char* argv[]) {
         p.obj->Draw(p.opt);
         std::string const pdf = stem + p.suffix + ".pdf";
         c.SaveAs(pdf.c_str());
-        std::cout << "Saved " << pdf << '\n';
+        std::println("Saved {}", pdf);
     }
 
     return 0;
