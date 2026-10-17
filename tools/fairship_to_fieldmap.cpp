@@ -29,11 +29,12 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <exception>
 #include <filesystem>
-#include <iostream>
 #include <limits>
 #include <memory>
+#include <print>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -42,15 +43,17 @@
 namespace {
 
 void usage(const char* prog) {
-    std::cerr << "Usage: " << prog << " [options] <input.root> <output.root>\n"
-              << "Options:\n"
-              << "  --name NAME          map name (default: input file stem)\n"
-              << "  --symmetry SYM       none (default) or quadrant_dipole (FairShip's\n"
-              << "                       SymFieldMap / quadSymm maps)\n"
-              << "  --source TEXT        provenance source (default: absolute input path),\n"
-              << "                       e.g. a URL when the input is a downloaded copy\n"
-              << "  --comment TEXT       free-text provenance comment\n"
-              << "  --truncate-bits N    store values with N bits (10-31) instead of 32\n";
+    std::print(stderr,
+               "Usage: {} [options] <input.root> <output.root>\n"
+               "Options:\n"
+               "  --name NAME          map name (default: input file stem)\n"
+               "  --symmetry SYM       none (default) or quadrant_dipole (FairShip's\n"
+               "                       SymFieldMap / quadSymm maps)\n"
+               "  --source TEXT        provenance source (default: absolute input path),\n"
+               "                       e.g. a URL when the input is a downloaded copy\n"
+               "  --comment TEXT       free-text provenance comment\n"
+               "  --truncate-bits N    store values with N bits (10-31) instead of 32\n",
+               prog);
 }
 
 }  // namespace
@@ -89,7 +92,7 @@ int main(int argc, char** argv) {
         if (symmetry != "none" && symmetry != "quadrant_dipole")
             throw std::invalid_argument("unknown symmetry '" + symmetry + "'");
     } catch (std::exception const& e) {
-        std::cerr << "error: " << e.what() << '\n';
+        std::println(stderr, "error: {}", e.what());
         usage(argv[0]);
         return 1;
     }
@@ -102,7 +105,7 @@ int main(int argc, char** argv) {
 
     std::unique_ptr<TFile> in_file{TFile::Open(in_path.c_str(), "READ")};
     if (!in_file || in_file->IsZombie()) {
-        std::cerr << "Failed to open ROOT file: " << in_path << '\n';
+        std::println(stderr, "Failed to open ROOT file: {}", in_path);
         return 1;
     }
 
@@ -115,7 +118,7 @@ int main(int argc, char** argv) {
     TTreeReaderValue<float> rzMin(range_reader, "zMin"), rzMax(range_reader, "zMax"),
         rdz(range_reader, "dz");
     if (!range_reader.Next()) {
-        std::cerr << "Input file lacks a readable Range TTree\n";
+        std::println(stderr, "Input file lacks a readable Range TTree");
         return 1;
     }
 
@@ -129,7 +132,7 @@ int main(int argc, char** argv) {
     // be silently ignored and could describe a grid inconsistent with the one
     // we build below, so reject them outright.
     if (range_reader.Next()) {
-        std::cerr << "Range tree has more than one entry; expected exactly one\n";
+        std::println(stderr, "Range tree has more than one entry; expected exactly one");
         return 1;
     }
 
@@ -139,12 +142,13 @@ int main(int argc, char** argv) {
     map.grid.max = max;
     for (std::size_t i = 0; i < 3; ++i) {
         if (!(spacing[i] > 0.0) || !(max[i] > min[i])) {
-            std::cerr << "Invalid Range tree: need max > min and spacing > 0 on every axis\n";
+            std::println(stderr,
+                         "Invalid Range tree: need max > min and spacing > 0 on every axis");
             return 1;
         }
         auto const steps = std::lround((max[i] - min[i]) / spacing[i]);
         if (steps < 1 || steps >= std::numeric_limits<std::uint32_t>::max()) {
-            std::cerr << "Invalid Range tree: axis " << i << " has an unusable sample count\n";
+            std::println(stderr, "Invalid Range tree: axis {} has an unusable sample count", i);
             return 1;
         }
         // The extent must be an integer number of steps: otherwise lround()
@@ -152,8 +156,10 @@ int main(int argc, char** argv) {
         // the values the Data tree was sampled at.
         double const spanned = static_cast<double>(steps) * spacing[i];
         if (std::abs(spanned - (max[i] - min[i])) > 1e-2 * spacing[i]) {
-            std::cerr << "Invalid Range tree: axis " << i << " extent " << (max[i] - min[i])
-                      << " mm is not an integer multiple of spacing " << spacing[i] << " mm\n";
+            std::println(stderr,
+                         "Invalid Range tree: axis {} extent {} mm is not an integer multiple of "
+                         "spacing {} mm",
+                         i, max.at(i) - min.at(i), spacing.at(i));
             return 1;
         }
         map.grid.n[i] = static_cast<std::uint32_t>(steps + 1);
@@ -162,16 +168,15 @@ int main(int argc, char** argv) {
         map.symmetry = SHiP::FieldMapSymmetry::quadrantDipole();
 
     auto const total = map.grid.size();
-    std::cout << "Grid: " << map.grid.n[0] << " x " << map.grid.n[1] << " x " << map.grid.n[2]
-              << " samples\n"
-              << "Range: x[" << min[0] << ", " << max[0] << "] y[" << min[1] << ", " << max[1]
-              << "] z[" << min[2] << ", " << max[2] << "] (mm)\n";
+    std::println("Grid: {} x {} x {} samples", map.grid.n[0], map.grid.n[1], map.grid.n[2]);
+    std::println("Range: x[{}, {}] y[{}, {}] z[{}, {}] (mm)", min[0], max[0], min[1], max[1],
+                 min[2], max[2]);
 
     TTreeReader data_reader("Data", in_file.get());
     TTreeReaderValue<float> Bx(data_reader, "Bx"), By(data_reader, "By"), Bz(data_reader, "Bz");
     if (data_reader.GetEntries() != static_cast<Long64_t>(total)) {
-        std::cerr << "Data tree has " << data_reader.GetEntries() << " entries, expected " << total
-                  << '\n';
+        std::println(stderr, "Data tree has {} entries, expected {}", data_reader.GetEntries(),
+                     total);
         return 1;
     }
     map.bx.reserve(total);
@@ -183,7 +188,7 @@ int main(int argc, char** argv) {
         map.bz.push_back(*Bz);
     }
     if (map.bx.size() != total) {
-        std::cerr << "Data tree ended prematurely\n";
+        std::println(stderr, "Data tree ended prematurely");
         return 1;
     }
 
@@ -194,9 +199,9 @@ int main(int argc, char** argv) {
     try {
         SHiP::writeFieldMaps(out_path, std::span{&map, 1}, options);
     } catch (std::exception const& e) {
-        std::cerr << "error: " << e.what() << '\n';
+        std::println(stderr, "error: {}", e.what());
         return 1;
     }
-    std::cout << "Wrote map '" << map.name << "' to " << out_path << '\n';
+    std::println("Wrote map '{}' to {}", map.name, out_path);
     return 0;
 }

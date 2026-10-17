@@ -18,8 +18,9 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdio>
 #include <exception>
-#include <iostream>
+#include <print>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -27,9 +28,11 @@
 namespace {
 
 void usage(const char* prog) {
-    std::cerr << "Usage: " << prog
-              << " <out.root> <name> <Bx> <By> <Bz> <xMin> <xMax> <yMin> <yMax> <zMin> <zMax>\n"
-              << "       B in Tesla, positions in mm.\n";
+    std::print(stderr,
+               "Usage: {} <out.root> <name> <Bx> <By> <Bz> <xMin> <xMax> <yMin> <yMax> <zMin> "
+               "<zMax>\n"
+               "       B in Tesla, positions in mm.\n",
+               prog);
 }
 
 }  // namespace
@@ -48,7 +51,7 @@ int main(int argc, char** argv) {
             if (argv[i + 3][consumed] != '\0')
                 throw std::invalid_argument{"trailing characters"};
         } catch (std::exception const&) {
-            std::cerr << "Invalid number: '" << argv[i + 3] << "'\n";
+            std::println(stderr, "Invalid number: '{}'", argv[i + 3]);
             usage(argv[0]);
             return 1;
         }
@@ -69,13 +72,12 @@ int main(int argc, char** argv) {
     try {
         SHiP::writeFieldMaps(out_path, std::span{&map, 1});
     } catch (std::exception const& e) {
-        std::cerr << "error: " << e.what() << '\n';
+        std::println(stderr, "error: {}", e.what());
         usage(argv[0]);
         return 1;
     }
-    std::cout << "Wrote map '" << map.name << "' to " << out_path << " (Bx=" << args[0]
-              << " By=" << args[1] << " Bz=" << args[2] << " T, box [" << args[3] << "," << args[4]
-              << "] [" << args[5] << "," << args[6] << "] [" << args[7] << "," << args[8]
-              << "] mm)\n";
+    std::println("Wrote map '{}' to {} (Bx={} By={} Bz={} T, box [{},{}] [{},{}] [{},{}] mm)",
+                 map.name, out_path, args[0], args[1], args[2], args[3], args[4], args[5], args[6],
+                 args[7], args[8]);
     return 0;
 }

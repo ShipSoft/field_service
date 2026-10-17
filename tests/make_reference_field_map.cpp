@@ -9,11 +9,12 @@
 #include "SHiP/FieldService/FieldMapIO.h"
 #include "reference_maps.h"
 
-#include <iostream>
+#include <cstdio>
+#include <print>
 
 int main(int argc, char** argv) {
     if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " <out.root>\n";
+        std::println(stderr, "Usage: {} <out.root>", argv[0]);
         return 1;
     }
     auto const maps = SHiP::test::referenceMaps();
