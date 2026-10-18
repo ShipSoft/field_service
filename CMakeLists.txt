@@ -37,6 +37,8 @@ option(BUILD_TOOLS "Build the field-map conversion / dump utilities" ON)
 # ----------------------------------------------------------------------------
 
 find_package(mp-units CONFIG REQUIRED)
+# kokkos/mdspan, header-only; FieldMap.h exposes its mdspan type.
+find_package(mdspan CONFIG REQUIRED)
 # Canonical ShipSoft quantity types (SHiP/Units.hpp, SHiP::Units target);
 # headers-only, no ROOT linkage.
 find_package(SHiPDataModel 0.6 CONFIG REQUIRED)
@@ -78,7 +80,7 @@ target_include_directories(
 
 target_link_libraries(
     SHiPFieldService
-    PUBLIC mp-units::mp-units SHiP::Units
+    PUBLIC mp-units::mp-units SHiP::Units mdspan::mdspan
     PRIVATE covfie::core covfie::cpu
 )
 # CMAKE_CXX_STANDARD is directory-scoped and not exported; this carries the
