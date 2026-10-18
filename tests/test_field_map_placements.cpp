@@ -114,12 +114,12 @@ TEST_CASE("Placements.ReadsMagnetsAndGeometry", "[placements]") {
     CHECK(p.magnets[0].name == "Shield");
     CHECK(p.magnets[0].volume_pattern == "/SHiP/muon_shield");
     CHECK(p.magnets[0].map == "dipole_quadrant");
-    CHECK(p.magnets[0].translation == std::array{0.0, 0.0, 2040.0});
+    CHECK(p.magnets[0].translation == SHiP::test::mm3(0.0, 0.0, 2040.0));
     // Map files are taken from the manifest's directory.
     auto const expected_file = std::filesystem::canonical(fd.dir / "reference.root");
     CHECK(std::filesystem::path(p.magnets[0].file) == expected_file);
     // Omitted translation means the origins coincide.
-    CHECK(p.magnets[1].translation == std::array{0.0, 0.0, 0.0});
+    CHECK(p.magnets[1].translation == SHiP::test::mm3(0.0, 0.0, 0.0));
 }
 
 TEST_CASE("Placements.ResolvesBareNameUnderShipfieldRoot", "[placements]") {

@@ -36,9 +36,10 @@ void checkField(SHiP::IFieldEvaluator const& eval, double x, double y, double z,
 }  // namespace
 
 TEST_CASE("FieldMap.GridViewIsZFastest", "[field_map]") {
-    SHiP::FieldMapGrid const g{{0, 0, 0}, {1, 1, 1}, {2, 3, 4}};
+    using SHiP::test::mm3;
+    SHiP::FieldMapGrid const g{.min = mm3(0, 0, 0), .max = mm3(1, 1, 1), .n = {2, 3, 4}};
     CHECK(g.size() == 24u);
-    CHECK(g.node(2, 3) == 1.0);
+    CHECK(g.node(2, 3) == 1.0 * SHiP::units::mm);
 
     std::vector<float> values(g.size());
     auto const v = g.view(values);
@@ -97,7 +98,9 @@ TEST_CASE("FieldMap.EvaluatorInterpolatesAndClamps", "[field_map]") {
     // Without symmetry: a map of dipoleField over a box straddling the origin.
     SHiP::FieldMap m;
     m.name = "full";
-    m.grid = {{-100, -50, -200}, {100, 50, 200}, {5, 5, 5}};
+    m.grid = {.min = SHiP::test::mm3(-100, -50, -200),
+              .max = SHiP::test::mm3(100, 50, 200),
+              .n = {5, 5, 5}};
     SHiP::test::sampleNodes(m, SHiP::test::dipoleField);
     auto const eval = SHiP::makeFieldEvaluator(m);
     REQUIRE(eval);
@@ -134,24 +137,32 @@ TEST_CASE("FieldMap.EvaluatorOwnsItsData", "[field_map]") {
 
 TEST_CASE("FieldMap.ExtentCoversMirroredAxes", "[field_map]") {
     auto const plain = SHiP::extent(SHiP::test::uniformMap());
-    CHECK(plain.min == std::array<double, 3>{-1000.0, -1000.0, -1000.0});
-    CHECK(plain.max == std::array<double, 3>{1000.0, 1000.0, 1000.0});
+    CHECK(plain.min == SHiP::test::mm3(-1000.0, -1000.0, -1000.0));
+    CHECK(plain.max == SHiP::test::mm3(1000.0, 1000.0, 1000.0));
 
     // dipoleMap stores x in [0, 100] and y in [0, 50], mirrored in both.
     auto const mirrored = SHiP::extent(SHiP::test::dipoleMap());
-    CHECK(mirrored.min == std::array<double, 3>{-100.0, -50.0, -200.0});
-    CHECK(mirrored.max == std::array<double, 3>{100.0, 50.0, 200.0});
+    CHECK(mirrored.min == SHiP::test::mm3(-100.0, -50.0, -200.0));
+    CHECK(mirrored.max == SHiP::test::mm3(100.0, 50.0, 200.0));
 }
 
 TEST_CASE("FieldMap.BoxContainsItsBoundaryButNotNaN", "[field_map]") {
-    SHiP::FieldBox const box{.min = {-1.0, -2.0, -3.0}, .max = {1.0, 2.0, 3.0}};
-    CHECK(box.contains(0.0, 0.0, 0.0));
-    CHECK(box.contains(1.0, -2.0, 3.0));
-    CHECK_FALSE(box.contains(1.001, 0.0, 0.0));
-    CHECK_FALSE(box.contains(0.0, 0.0, -3.001));
+    using SHiP::test::mm3;
+    SHiP::FieldBox const box{.min = mm3(-1.0, -2.0, -3.0), .max = mm3(1.0, 2.0, 3.0)};
+    auto const contains = [&box](double x, double y, double z) {
+        auto const p = mm3(x, y, z);
+        return box.contains(p[0], p[1], p[2]);
+    };
+    CHECK(contains(0.0, 0.0, 0.0));
+    CHECK(contains(1.0, -2.0, 3.0));
+    CHECK_FALSE(contains(1.001, 0.0, 0.0));
+    CHECK_FALSE(contains(0.0, 0.0, -3.001));
+    // A box given in metres compares in the same units.
+    using SHiP::units::m;
+    CHECK(box.contains(0.001 * m, 0.0 * m, 0.0 * m));
     auto const nan = std::numeric_limits<double>::quiet_NaN();
-    CHECK_FALSE(box.contains(nan, 0.0, 0.0));
-    CHECK_FALSE(box.contains(0.0, 0.0, nan));
+    CHECK_FALSE(contains(nan, 0.0, 0.0));
+    CHECK_FALSE(contains(0.0, 0.0, nan));
 }
 
 TEST_CASE("FieldMap.ZeroOutsideReplacesClamping", "[field_map]") {
@@ -169,21 +180,22 @@ TEST_CASE("FieldMap.ZeroOutsideReplacesClamping", "[field_map]") {
 
 TEST_CASE("FieldMap.TranslatedShiftsTheOrigin", "[field_map]") {
     auto const local = SHiP::makeFieldEvaluator(SHiP::test::dipoleMap());
-    CHECK(SHiP::translated(local, {0.0, 0.0, 0.0}) == local);
+    CHECK(SHiP::translated(local, SHiP::test::mm3(0.0, 0.0, 0.0)) == local);
 
-    auto const placed = SHiP::translated(local, {10.0, -5.0, 5000.0});
+    auto const placed = SHiP::translated(local, SHiP::test::mm3(10.0, -5.0, 5000.0));
     checkField(*placed, -10.0, 15.0, 5050.0, SHiP::test::dipoleField(-20.0, 20.0, 50.0));
 
     // Composed the way a consumer places a map with 0 outside it.
     auto const map = SHiP::test::dipoleMap();
-    auto const bounded =
-        SHiP::translated(SHiP::zeroOutside(local, SHiP::extent(map)), {0.0, 0.0, 5000.0});
+    auto const bounded = SHiP::translated(SHiP::zeroOutside(local, SHiP::extent(map)),
+                                          SHiP::test::mm3(0.0, 0.0, 5000.0));
     checkField(*bounded, 0.0, 0.0, 5100.0, SHiP::test::dipoleField(0.0, 0.0, 100.0));
     checkField(*bounded, 0.0, 0.0, 100.0, {0.0, 0.0, 0.0});
 
     auto const inf = std::numeric_limits<double>::infinity();
-    CHECK_THROWS_AS(SHiP::translated(local, {0.0, inf, 0.0}), std::invalid_argument);
-    CHECK_THROWS_AS(SHiP::translated(nullptr, {1.0, 0.0, 0.0}), std::invalid_argument);
+    CHECK_THROWS_AS(SHiP::translated(local, SHiP::test::mm3(0.0, inf, 0.0)), std::invalid_argument);
+    CHECK_THROWS_AS(SHiP::translated(nullptr, SHiP::test::mm3(1.0, 0.0, 0.0)),
+                    std::invalid_argument);
 }
 
 TEST_CASE("FieldMap.EvaluatorReturnsNaNForNaNPositions", "[field_map]") {

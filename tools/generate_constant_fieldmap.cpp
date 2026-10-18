@@ -59,8 +59,9 @@ int main(int argc, char** argv) {
 
     SHiP::FieldMap map;
     map.name = argv[2];
-    map.grid.min = {args[3], args[5], args[7]};
-    map.grid.max = {args[4], args[6], args[8]};
+    using SHiP::units::mm;
+    map.grid.min = {args[3] * mm, args[5] * mm, args[7] * mm};
+    map.grid.max = {args[4] * mm, args[6] * mm, args[8] * mm};
     map.grid.n = {2, 2, 2};
     auto const size = map.grid.size();
     map.bx.assign(size, static_cast<float>(args[0]));
