@@ -48,9 +48,6 @@ An [automatic class reference](https://shipsoft.github.io/field_service/) is bui
   `FieldMapSource`, which loads one map per magnet, and
   `readFieldMapPlacements`, which reads the magnet list from a placement
   manifest. MapIO component.
-- `include/SHiP/FieldService/CovfieFieldSource.h`: deprecated source reading covfie
-  `.cvf` files, kept for one release while consumers move to
-  `FieldMapSource`.
 - `include/SHiP/FieldService/G4MagFieldAdapter.h`: Geant4 adapter, built when
   `BUILD_G4_ADAPTER=ON`.
 - `include/SHiP/FieldService/ActsFieldAdapter.h`: ACTS adapter, built when

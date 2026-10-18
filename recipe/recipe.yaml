@@ -74,7 +74,6 @@ outputs:
       files:
         - lib/libSHiPFieldService.so*
         - include/SHiP/FieldService/IFieldSource.h
-        - include/SHiP/FieldService/CovfieFieldSource.h
         - include/SHiP/FieldService/FieldMap.h
         - lib/cmake/SHiPFieldService/SHiPFieldServiceConfig.cmake
         - lib/cmake/SHiPFieldService/SHiPFieldServiceConfigVersion.cmake
@@ -105,7 +104,6 @@ outputs:
       - script:
           - test -f $PREFIX/lib/libSHiPFieldService.so
           - test -f $PREFIX/include/SHiP/FieldService/IFieldSource.h
-          - test -f $PREFIX/include/SHiP/FieldService/CovfieFieldSource.h
           - test -f $PREFIX/include/SHiP/FieldService/FieldMap.h
           - test -f $PREFIX/lib/cmake/SHiPFieldService/SHiPFieldServiceConfig.cmake
           - test -f $PREFIX/lib/cmake/SHiPFieldService/SHiPFieldServiceTargets.cmake
