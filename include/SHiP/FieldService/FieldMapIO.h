@@ -63,10 +63,10 @@ class FieldMapSource final : public IFieldSource {
         std::string volume_pattern;
         std::string file;
         std::string map;
-        /// Global position (mm) of the map's local origin. Maps are stored in
+        /// Global position of the map's local origin. Maps are stored in
         /// their own frame; the global field at p is the map's field at
         /// p - translation.
-        std::array<double, 3> translation{};
+        Vec3<Length> translation{};
     };
 
     explicit FieldMapSource(std::vector<MagnetConfig> magnets);
