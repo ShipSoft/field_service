@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "SHiP/FieldService/CovfieFieldSource.h"
+// makeFieldEvaluator: the covfie-backed evaluator for an in-memory FieldMap.
 
 #include "SHiP/FieldService/FieldMap.h"
 #include "detail/covfie_chains.h"
@@ -10,18 +10,10 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
-#include <cstdlib>
-#include <filesystem>
-#include <fstream>
 #include <limits>
-#include <map>
 #include <memory>
-#include <mutex>
 #include <ranges>
-#include <stdexcept>
-#include <string>
 #include <utility>
-#include <vector>
 
 namespace SHiP {
 
@@ -29,15 +21,18 @@ namespace {
 
 using field_t = detail::reader_field_t;
 
-class CovfieEvaluator final : public IFieldEvaluator {
+class MapEvaluator final : public IFieldEvaluator {
    public:
-    explicit CovfieEvaluator(field_t field, FieldMapSymmetry symmetry = {})
+    MapEvaluator(field_t field, FieldMapSymmetry symmetry)
         : field_{std::move(field)}, symmetry_{symmetry} {}
 
     // view_ references field_; moving would dangle it. Instances only ever
     // live behind a shared_ptr, so immovability costs nothing.
-    CovfieEvaluator(CovfieEvaluator const&) = delete;
-    CovfieEvaluator& operator=(CovfieEvaluator const&) = delete;
+    MapEvaluator(MapEvaluator const&) = delete;
+    MapEvaluator& operator=(MapEvaluator const&) = delete;
+    MapEvaluator(MapEvaluator&&) = delete;
+    MapEvaluator& operator=(MapEvaluator&&) = delete;
+    ~MapEvaluator() override = default;
 
     [[nodiscard]] std::array<field_q, 3> at(pos_q x, pos_q y, pos_q z) const override {
         using namespace mp_units::si;
@@ -94,43 +89,8 @@ std::shared_ptr<IFieldEvaluator> makeFieldEvaluator(FieldMap const& map) {
         values[i][1] = map.by[i];
         values[i][2] = map.bz[i];
     }
-    return std::make_shared<CovfieEvaluator>(detail::make_reader_field(spec, std::move(values)),
-                                             map.symmetry);
-}
-
-std::shared_ptr<IFieldEvaluator> loadCovfieField(std::string const& cvf_path) {
-    auto resolved = resolveFieldMapPath(cvf_path);
-
-    // Magnets may share a map file; hand out one evaluator per file so the
-    // (potentially large) grid is held in memory only once.
-    static std::mutex cache_mutex;
-    static std::map<std::string, std::weak_ptr<IFieldEvaluator>> cache;
-    std::lock_guard lock{cache_mutex};
-    if (auto it = cache.find(resolved); it != cache.end())
-        if (auto cached = it->second.lock())
-            return cached;
-
-    std::ifstream is(resolved, std::ios::binary);
-    if (!is.good())
-        throw std::runtime_error("Failed to open field map: " + resolved);
-    field_t field(is);
-    auto eval = std::make_shared<CovfieEvaluator>(std::move(field));
-    cache[resolved] = eval;
-    return eval;
-}
-
-CovfieFieldSource::CovfieFieldSource(std::vector<MagnetConfig> magnets) {
-    regions_.reserve(magnets.size());
-    for (auto& m : magnets) {
-        FieldRegion r;
-        r.name = std::move(m.name);
-        r.volume_pattern = std::move(m.volume_pattern);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-        r.field = loadCovfieField(m.cvf_file);
-#pragma GCC diagnostic pop
-        regions_.push_back(std::move(r));
-    }
+    return std::make_shared<MapEvaluator>(detail::make_reader_field(spec, std::move(values)),
+                                          map.symmetry);
 }
 
 }  // namespace SHiP
