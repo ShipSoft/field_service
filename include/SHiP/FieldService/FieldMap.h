@@ -37,13 +37,22 @@ struct FieldMapGrid {
     [[nodiscard]] double node(std::size_t axis, std::size_t i) const;
 };
 
+/// How a field component behaves under a reflection. The value is the factor
+/// the component picks up, as stored in the file format.
+enum class Parity : std::int8_t { odd = -1, even = 1 };
+
 /// Reflection symmetry. A mirrored axis stores only coordinates >= 0 (its
 /// grid starts at 0); a query at a negative coordinate on that axis is
-/// evaluated at the reflected point and component `c` is multiplied by
-/// `parity[3 * axis + c]` (+1 or -1). Rows of non-mirrored axes are ignored.
+/// evaluated at the reflected point and component `c` takes the sign of
+/// `parity[axis][c]`. Rows of non-mirrored axes are ignored.
 struct FieldMapSymmetry {
+    using Row = std::array<Parity, 3>;
+    /// Indexed [mirrored axis][component].
+    using Matrix = std::array<Row, 3>;
+    static constexpr Row kEven{Parity::even, Parity::even, Parity::even};
+
     std::array<bool, 3> mirror{};
-    std::array<std::int8_t, 9> parity{1, 1, 1, 1, 1, 1, 1, 1, 1};
+    Matrix parity{kEven, kEven, kEven};
 
     [[nodiscard]] bool any() const { return mirror[0] || mirror[1] || mirror[2]; }
 

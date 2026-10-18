@@ -42,10 +42,10 @@ double FieldMapGrid::node(std::size_t axis, std::size_t i) const {
 }
 
 FieldMapSymmetry FieldMapSymmetry::quadrantDipole() {
+    using enum Parity;
     FieldMapSymmetry s;
     s.mirror = {true, true, false};
-    // Row x: Bx odd, By even, Bz even. Row y: Bx odd, By even, Bz odd.
-    s.parity = {-1, 1, 1, -1, 1, -1, 1, 1, 1};
+    s.parity = {Row{odd, even, even}, Row{odd, even, odd}, kEven};
     return s;
 }
 
@@ -69,9 +69,12 @@ void validate(FieldMap const& map) {
             fail("node count overflows");
         total *= g.n[a];
     }
-    for (auto const p : map.symmetry.parity)
-        if (p != 1 && p != -1)
-            fail("parity entries must be +1 or -1");
+    // Parity has a fixed underlying type, so any int8 value casts to it.
+    for (auto const p : map.symmetry.parity | std::views::join) {
+        if (p != Parity::odd && p != Parity::even) {
+            fail("parity entries must be odd or even");
+        }
+    }
     if (map.bx.size() != total || map.by.size() != total || map.bz.size() != total)
         fail("expected " + std::to_string(total) + " values per component, got " +
              std::to_string(map.bx.size()) + "/" + std::to_string(map.by.size()) + "/" +
