@@ -66,16 +66,15 @@ json parseManifest(std::string const& path) {
     return doc;
 }
 
-std::array<double, 3> readTranslation(json const& t, std::string const& path,
-                                      std::string const& where) {
-    std::array<double, 3> out{};
+Vec3<Length> readTranslation(json const& t, std::string const& path, std::string const& where) {
+    Vec3<Length> out{};
     if (!t.is_array() || t.size() != out.size())
         fail(path, where + ": 'translation' needs 3 numbers (mm)");
     auto v = t.begin();
     for (auto& component : out) {
         if (!v->is_number() || !std::isfinite(v->get<double>()))
             fail(path, where + ": 'translation' values must be finite numbers");
-        component = (v++)->get<double>();
+        component = (v++)->get<double>() * units::mm;
     }
     return out;
 }

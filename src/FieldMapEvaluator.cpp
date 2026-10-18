@@ -71,15 +71,19 @@ class MapEvaluator final : public IFieldEvaluator {
     field_t::view_t view_{field_};
 };
 
+/// covfie works in float mm.
+float mm(Length l) {
+    return static_cast<float>(l.numerical_value_in(units::mm));
+}
+
 }  // namespace
 
 std::shared_ptr<IFieldEvaluator> makeFieldEvaluator(FieldMap const& map) {
     validate(map);
     auto const& g = map.grid;
-    detail::GridSpec const spec{
-        {static_cast<float>(g.min[0]), static_cast<float>(g.min[1]), static_cast<float>(g.min[2])},
-        {static_cast<float>(g.max[0]), static_cast<float>(g.max[1]), static_cast<float>(g.max[2])},
-        {g.n[0], g.n[1], g.n[2]}};
+    detail::GridSpec const spec{.min = {mm(g.min[0]), mm(g.min[1]), mm(g.min[2])},
+                                .max = {mm(g.max[0]), mm(g.max[1]), mm(g.max[2])},
+                                .n = {g.n[0], g.n[1], g.n[2]}};
     // The format stores components as separate arrays; covfie wants one
     // interleaved {Bx, By, Bz} per node. Both use the same node order.
     auto const size = g.size();

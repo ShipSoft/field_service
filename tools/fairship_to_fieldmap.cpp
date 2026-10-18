@@ -138,8 +138,9 @@ int main(int argc, char** argv) {
 
     SHiP::FieldMap map;
     map.name = name.empty() ? std::filesystem::path(in_path).stem().string() : name;
-    map.grid.min = min;
-    map.grid.max = max;
+    using SHiP::units::mm;
+    map.grid.min = {min[0] * mm, min[1] * mm, min[2] * mm};
+    map.grid.max = {max[0] * mm, max[1] * mm, max[2] * mm};
     for (std::size_t i = 0; i < 3; ++i) {
         if (!(spacing[i] > 0.0) || !(max[i] > min[i])) {
             std::println(stderr,

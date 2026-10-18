@@ -17,6 +17,11 @@
 
 namespace SHiP::test {
 
+/// (x, y, z) mm as lengths.
+inline Vec3<Length> mm3(double x, double y, double z) {
+    return {x * units::mm, y * units::mm, z * units::mm};
+}
+
 /// Quadrant-symmetric dipole-like field, defined for all (x, y, z) in mm:
 /// Bx is odd in x and y, By even, Bz even in x and odd in y, matching
 /// FieldMapSymmetry::quadrantDipole().
@@ -34,8 +39,11 @@ void sampleNodes(FieldMap& m, Field const& field) {
     auto const by = m.grid.view(m.by);
     auto const bz = m.grid.view(m.bz);
     auto const nodes = [&bx](std::size_t axis) { return std::views::iota(0uz, bx.extent(axis)); };
+    auto const node_mm = [&m](std::size_t axis, std::size_t n) {
+        return m.grid.node(axis, n).numerical_value_in(units::mm);
+    };
     for (auto const [i, j, k] : std::views::cartesian_product(nodes(0), nodes(1), nodes(2))) {
-        auto const B = field(m.grid.node(0, i), m.grid.node(1, j), m.grid.node(2, k));
+        auto const B = field(node_mm(0, i), node_mm(1, j), node_mm(2, k));
         bx[i, j, k] = static_cast<float>(B[0]);
         by[i, j, k] = static_cast<float>(B[1]);
         bz[i, j, k] = static_cast<float>(B[2]);
@@ -46,7 +54,7 @@ void sampleNodes(FieldMap& m, Field const& field) {
 inline FieldMap dipoleMap() {
     FieldMap m;
     m.name = "dipole_quadrant";
-    m.grid = {{0.0, 0.0, -200.0}, {100.0, 50.0, 200.0}, {3, 3, 5}};
+    m.grid = {.min = mm3(0.0, 0.0, -200.0), .max = mm3(100.0, 50.0, 200.0), .n = {3, 3, 5}};
     m.symmetry = FieldMapSymmetry::quadrantDipole();
     sampleNodes(m, dipoleField);
     m.provenance = {"tests/reference_maps.h", "reference map for format 1.0",
@@ -58,7 +66,8 @@ inline FieldMap dipoleMap() {
 inline FieldMap uniformMap() {
     FieldMap m;
     m.name = "uniform";
-    m.grid = {{-1000.0, -1000.0, -1000.0}, {1000.0, 1000.0, 1000.0}, {2, 2, 2}};
+    m.grid = {
+        .min = mm3(-1000.0, -1000.0, -1000.0), .max = mm3(1000.0, 1000.0, 1000.0), .n = {2, 2, 2}};
     m.bx.assign(8, 0.0f);
     m.by.assign(8, -1.5f);
     m.bz.assign(8, 0.0f);

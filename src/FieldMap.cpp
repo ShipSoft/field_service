@@ -11,6 +11,7 @@
 #include <format>
 #include <limits>
 #include <memory>
+#include <mp-units/math.h>
 #include <ranges>
 #include <stdexcept>
 #include <string>
@@ -57,7 +58,7 @@ ConstFieldMapView FieldMapGrid::view(std::vector<float> const& values) const {
     return view_of<ConstFieldMapView>(*this, values);
 }
 
-double FieldMapGrid::node(std::size_t axis, std::size_t i) const {
+Length FieldMapGrid::node(std::size_t axis, std::size_t i) const {
     return min[axis] +
            static_cast<double>(i) * (max[axis] - min[axis]) / static_cast<double>(n[axis] - 1);
 }
@@ -78,17 +79,21 @@ void validate(FieldMap const& map) {
         fail("name must not be empty");
     auto const& g = map.grid;
     std::size_t total = 1;
-    for (std::size_t a = 0; a < 3; ++a) {
-        auto const axis = std::to_string(a);
-        if (g.n[a] < 2)
-            fail("axis " + axis + " needs at least 2 nodes");
-        if (!std::isfinite(g.min[a]) || !std::isfinite(g.max[a]) || !(g.max[a] > g.min[a]))
-            fail("axis " + axis + " needs finite bounds with max > min");
-        if (map.symmetry.mirror[a] && g.min[a] != 0.0)
-            fail("mirrored axis " + axis + " must start at 0");
-        if (total > std::numeric_limits<std::size_t>::max() / g.n[a])
+    for (auto const [axis, lo, hi, n, mirrored] :
+         std::views::zip(std::string_view{"xyz"}, g.min, g.max, g.n, map.symmetry.mirror)) {
+        if (n < 2) {
+            fail(std::format("axis {} needs at least 2 nodes", axis));
+        }
+        if (!isfinite(lo) || !isfinite(hi) || !(hi > lo)) {
+            fail(std::format("axis {} needs finite bounds with max > min", axis));
+        }
+        if (mirrored && lo != Length::zero()) {
+            fail(std::format("mirrored axis {} must start at 0", axis));
+        }
+        if (total > std::numeric_limits<std::size_t>::max() / n) {
             fail("node count overflows");
-        total *= g.n[a];
+        }
+        total *= n;
     }
     // Parity has a fixed underlying type, so any int8 value casts to it.
     for (auto const p : map.symmetry.parity | std::views::join) {
@@ -112,7 +117,7 @@ void validate(FieldMap const& map) {
     requireFinite('z', map.bz);
 }
 
-bool FieldBox::contains(double x, double y, double z) const {
+bool FieldBox::contains(Length x, Length y, Length z) const {
     // Written so that NaN compares false.
     return x >= min[0] && x <= max[0] && y >= min[1] && y <= max[1] && z >= min[2] && z <= max[2];
 }
@@ -129,14 +134,10 @@ FieldBox extent(FieldMap const& map) {
 
 namespace {
 
-using mp_units::si::metre;
-using mp_units::si::milli;
-
 class TranslatedEvaluator final : public IFieldEvaluator {
    public:
-    TranslatedEvaluator(std::shared_ptr<IFieldEvaluator> inner, std::array<double, 3> const& offset)
-        : inner_{std::move(inner)},
-          offset_{offset[0] * milli<metre>, offset[1] * milli<metre>, offset[2] * milli<metre>} {}
+    TranslatedEvaluator(std::shared_ptr<IFieldEvaluator> inner, Vec3<Length> const& offset)
+        : inner_{std::move(inner)}, offset_{offset} {}
 
     [[nodiscard]] std::array<field_q, 3> at(pos_q x, pos_q y, pos_q z) const override {
         return inner_->at(x - offset_[0], y - offset_[1], z - offset_[2]);
@@ -144,7 +145,7 @@ class TranslatedEvaluator final : public IFieldEvaluator {
 
    private:
     std::shared_ptr<IFieldEvaluator> inner_;
-    std::array<pos_q, 3> offset_;
+    Vec3<Length> offset_;
 };
 
 class ZeroOutsideEvaluator final : public IFieldEvaluator {
@@ -154,8 +155,7 @@ class ZeroOutsideEvaluator final : public IFieldEvaluator {
 
     [[nodiscard]] std::array<field_q, 3> at(pos_q x, pos_q y, pos_q z) const override {
         using mp_units::si::tesla;
-        if (box_.contains(x.numerical_value_in(milli<metre>), y.numerical_value_in(milli<metre>),
-                          z.numerical_value_in(milli<metre>))) {
+        if (box_.contains(x, y, z)) {
             return inner_->at(x, y, z);
         }
         return {0.0 * tesla, 0.0 * tesla, 0.0 * tesla};
@@ -169,16 +169,16 @@ class ZeroOutsideEvaluator final : public IFieldEvaluator {
 }  // namespace
 
 std::shared_ptr<IFieldEvaluator> translated(std::shared_ptr<IFieldEvaluator> inner,
-                                            std::array<double, 3> const& offset) {
+                                            Vec3<Length> const& offset) {
     if (!inner) {
         throw std::invalid_argument("translated: null evaluator");
     }
     for (auto const v : offset) {
-        if (!std::isfinite(v)) {
+        if (!isfinite(v)) {
             throw std::invalid_argument("translated: offset must be finite");
         }
     }
-    if (offset == std::array<double, 3>{}) {
+    if (offset == Vec3<Length>{}) {
         return inner;
     }
     return std::make_shared<TranslatedEvaluator>(std::move(inner), offset);
