@@ -36,6 +36,27 @@ std::size_t FieldMapGrid::size() const {
     return static_cast<std::size_t>(n[0]) * n[1] * n[2];
 }
 
+namespace {
+
+template <typename View, typename Values>
+View view_of(FieldMapGrid const& grid, Values& values) {
+    if (values.size() != grid.size()) {
+        throw std::invalid_argument(std::format("FieldMapGrid::view: {} values for a grid of {}",
+                                                values.size(), grid.size()));
+    }
+    return View{values.data(), grid.n[0], grid.n[1], grid.n[2]};
+}
+
+}  // namespace
+
+FieldMapView FieldMapGrid::view(std::vector<float>& values) const {
+    return view_of<FieldMapView>(*this, values);
+}
+
+ConstFieldMapView FieldMapGrid::view(std::vector<float> const& values) const {
+    return view_of<ConstFieldMapView>(*this, values);
+}
+
 double FieldMapGrid::node(std::size_t axis, std::size_t i) const {
     return min[axis] +
            static_cast<double>(i) * (max[axis] - min[axis]) / static_cast<double>(n[axis] - 1);

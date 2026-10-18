@@ -13,11 +13,18 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <mdspan/mdspan.hpp>
 #include <memory>
 #include <string>
 #include <vector>
 
 namespace SHiP {
+
+/// One field component's node values, indexed `[i, j, k]`. The layout_right
+/// mapping is the format's node order: x-major, z fastest.
+/// kokkos/mdspan rather than std::mdspan, which libstdc++ only has from GCC 16.
+using FieldMapView = Kokkos::mdspan<float, Kokkos::dextents<std::size_t, 3>>;
+using ConstFieldMapView = Kokkos::mdspan<float const, Kokkos::dextents<std::size_t, 3>>;
 
 /// Equidistant Cartesian grid in the map's local frame. Axis `a` has `n[a]`
 /// nodes; node `i` sits at `min[a] + i * (max[a] - min[a]) / (n[a] - 1)`, so
@@ -29,10 +36,13 @@ struct FieldMapGrid {
 
     /// Number of nodes, `n[0] * n[1] * n[2]`.
     [[nodiscard]] std::size_t size() const;
-    /// Flat index of node (i, j, k): x-major, z fastest.
-    [[nodiscard]] std::size_t index(std::size_t i, std::size_t j, std::size_t k) const {
-        return (i * n[1] + j) * n[2] + k;
-    }
+    /// `values`, one component with an entry per node, viewed as a 3D array
+    /// over this grid. Throws `std::invalid_argument` unless `values` has
+    /// `size()` entries. The view does not own the values.
+    [[nodiscard]] FieldMapView view(std::vector<float>& values) const;
+    [[nodiscard]] ConstFieldMapView view(std::vector<float> const& values) const;
+    /// A view of a temporary would dangle.
+    void view(std::vector<float>&& values) const = delete;
     /// Position (mm) of node `i` on axis `axis`.
     [[nodiscard]] double node(std::size_t axis, std::size_t i) const;
 };
@@ -71,7 +81,8 @@ struct FieldMapProvenance {
 };
 
 /// One field map: grid, symmetry, and per-node field components in Tesla,
-/// stored in `FieldMapGrid::index` order.
+/// stored x-major with z fastest. `grid.view(bx)[i, j, k]` is Bx at node
+/// (i, j, k).
 struct FieldMap {
     std::string name;
     FieldMapGrid grid;

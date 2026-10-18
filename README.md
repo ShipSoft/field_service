@@ -69,7 +69,7 @@ An [automatic class reference](https://shipsoft.github.io/field_service/) is bui
 
 The supported way to set up a build environment is [pixi](https://pixi.sh).
 `pixi.toml` pins the toolchain and all required packages
-(`mp-units`, `geant4`, `acts-core`, `root`, `catch2`, `cmake`, `ninja`,
+(`mp-units`, `mdspan`, `geant4`, `acts-core`, `root`, `catch2`, `cmake`, `ninja`,
 `cxx-compiler`).
 
 ```bash
