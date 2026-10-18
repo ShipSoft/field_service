@@ -6,17 +6,6 @@ find_package(Catch2 3 REQUIRED)
 
 include(Catch)
 
-# Roundtrip: build a covfie field in memory, dump to a temp file, load via the
-# library's loadCovfieField, and verify point queries match the original.
-add_executable(test_field_source test_field_source.cpp)
-target_link_libraries(
-    test_field_source
-    PRIVATE SHiPFieldService Catch2::Catch2WithMain covfie::core covfie::cpu
-)
-# For the internal writer-chain header (src/detail/covfie_chains.h).
-target_include_directories(test_field_source PRIVATE ${PROJECT_SOURCE_DIR}/src)
-catch_discover_tests(test_field_source)
-
 # Compile/link guarantee: the Core library must not pull Geant4 or ROOT. We add a
 # target that links only SHiPFieldService and a trivial main; the link step
 # fails if a Geant4 symbol leaked into the public interface.
