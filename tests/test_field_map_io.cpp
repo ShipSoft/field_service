@@ -78,7 +78,8 @@ void writeRaw(std::filesystem::path const& path, RawOverrides const& o) {
     *model->MakeField<std::vector<float>>("by") = m.by;
     *model->MakeField<std::vector<float>>("bz") = m.bz;
     *model->MakeField<std::array<bool, 3>>("mirror") = m.symmetry.mirror;
-    *model->MakeField<std::array<std::int8_t, 9>>("parity") = m.symmetry.parity;
+    // uniformMap() has no symmetry: every parity is even (+1).
+    *model->MakeField<std::array<std::int8_t, 9>>("parity") = {1, 1, 1, 1, 1, 1, 1, 1, 1};
     *model->MakeField<std::string>("source") = "";
     *model->MakeField<std::string>("comment") = "";
     *model->MakeField<std::string>("producer") = "";

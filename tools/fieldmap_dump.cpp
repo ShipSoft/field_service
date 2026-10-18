@@ -18,7 +18,6 @@
 #include <mp-units/systems/si.h>
 #include <print>
 #include <ranges>
-#include <span>
 #include <string_view>
 
 namespace {
@@ -38,7 +37,10 @@ void print(SHiP::FieldMap const& m) {
         std::print("  {}: [{}, {}] mm, {} nodes", axis, m.grid.min.at(a), m.grid.max.at(a),
                    m.grid.n.at(a));
         if (m.symmetry.mirror.at(a)) {
-            std::print(", mirrored, parity ({:n})", std::span{m.symmetry.parity}.subspan(3 * a, 3));
+            auto const names = m.symmetry.parity.at(a) | std::views::transform([](SHiP::Parity p) {
+                                   return p == SHiP::Parity::odd ? "odd" : "even";
+                               });
+            std::print(", mirrored, parity (Bx, By, Bz) = ({:n:})", names);
         }
         std::println();
     }

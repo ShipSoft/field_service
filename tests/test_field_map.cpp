@@ -70,7 +70,9 @@ TEST_CASE("FieldMap.ValidateRejectsMalformedMaps", "[field_map]") {
     CHECK_THROWS_AS(SHiP::validate(bad), std::invalid_argument);
 
     bad = m;
-    bad.symmetry.parity[4] = 0;
+    // Deliberately out of range, as a corrupt file could deliver.
+    bad.symmetry.parity[1][1] =
+        static_cast<SHiP::Parity>(0);  // NOLINT(clang-analyzer-optin.core.EnumCastOutOfRange)
     CHECK_THROWS_AS(SHiP::validate(bad), std::invalid_argument);
 
     bad = m;
