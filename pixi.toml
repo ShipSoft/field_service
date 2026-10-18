@@ -15,6 +15,10 @@ mp-units = "*"
 # release that moved it from the `ship` namespace into `SHiP`.
 shipdatamodel = ">=0.6.0"
 
+# kokkos/mdspan (header-only) for FieldMapGrid::view(). Public: FieldMap.h
+# includes it. GCC 15's libstdc++ has no <mdspan>.
+mdspan = ">=0.6"
+
 # Required by the default BUILD_G4_ADAPTER=ON path.
 geant4 = ">=11.3"
 
