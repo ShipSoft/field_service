@@ -47,6 +47,8 @@ void usage(const char* prog) {
               << "  --name NAME          map name (default: input file stem)\n"
               << "  --symmetry SYM       none (default) or quadrant_dipole (FairShip's\n"
               << "                       SymFieldMap / quadSymm maps)\n"
+              << "  --source TEXT        provenance source (default: absolute input path),\n"
+              << "                       e.g. a URL when the input is a downloaded copy\n"
               << "  --comment TEXT       free-text provenance comment\n"
               << "  --truncate-bits N    store values with N bits (10-31) instead of 32\n";
 }
@@ -56,6 +58,7 @@ void usage(const char* prog) {
 int main(int argc, char** argv) {
     std::string name;
     std::string symmetry = "none";
+    std::string source;
     std::string comment;
     SHiP::FieldMapWriteOptions options;
     std::array<std::string, 2> paths;
@@ -72,6 +75,8 @@ int main(int argc, char** argv) {
                 name = value();
             else if (arg == "--symmetry")
                 symmetry = value();
+            else if (arg == "--source")
+                source = value();
             else if (arg == "--comment")
                 comment = value();
             else if (arg == "--truncate-bits")
@@ -182,7 +187,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    map.provenance.source = std::filesystem::absolute(in_path).string();
+    map.provenance.source = source.empty() ? std::filesystem::absolute(in_path).string() : source;
     map.provenance.comment = comment;
     map.provenance.producer = "fairship_to_fieldmap " SHIPFIELD_VERSION;
 
