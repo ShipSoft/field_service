@@ -37,13 +37,17 @@ An [automatic class reference](https://shipsoft.github.io/field_service/) is bui
 ## Layout
 
 - `docs/field_map_format.md`: specification of the field-map file format.
+- `docs/placements_format.md`: specification of the placement manifest, which
+  says where each map sits in the geometry.
 - `include/SHiP/FieldService/IFieldSource.h`: interface (point-query evaluator,
   list of named regions tagged by host-geometry volume name).
 - `include/SHiP/FieldService/FieldMap.h`: in-memory map (grid, symmetry, values,
   provenance), `makeFieldEvaluator`, and the `translated` and `zeroOutside`
   wrappers that place a map and set its field outside the grid. Core, no ROOT.
 - `include/SHiP/FieldService/FieldMapIO.h`: read and write map files, and
-  `FieldMapSource`, which loads one map per magnet. MapIO component.
+  `FieldMapSource`, which loads one map per magnet, and
+  `readFieldMapPlacements`, which reads the magnet list from a placement
+  manifest. MapIO component.
 - `include/SHiP/FieldService/CovfieFieldSource.h`: deprecated source reading covfie
   `.cvf` files, kept for one release while consumers move to
   `FieldMapSource`.
@@ -53,7 +57,8 @@ An [automatic class reference](https://shipsoft.github.io/field_service/) is bui
   `BUILD_ACTS_ADAPTER=ON`.
 - `tools/` (built with MapIO):
   - `fairship_to_fieldmap` converts FairShip's legacy ROOT field-map format;
-    use `--symmetry quadrant_dipole` for quadrant-symmetric maps.
+    use `--symmetry quadrant_dipole` for quadrant-symmetric maps, and
+    `--source` to record where the input came from.
   - `fieldmap_dump` prints map metadata, or evaluates a map at points read
     from stdin.
   - `generate_constant_fieldmap` writes a uniform map for closure tests.
@@ -88,7 +93,8 @@ the `ship-field-maps` package from
 [ShipSoft/field_maps](https://github.com/ShipSoft/field_maps). It installs
 them under `share/field/`, together with `placements.json` and
 `field_maps.libsonnet`. Those two files give each map's position in the
-geometry, which this format deliberately leaves out.
+geometry, which this format deliberately leaves out. Pass a bare
+`placements.json` to `readFieldMapPlacements` to load them.
 
 ## Build directly with CMake
 

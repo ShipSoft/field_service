@@ -72,6 +72,13 @@ if(BUILD_MAPIO)
     )
     catch_discover_tests(test_field_map_io)
 
+    add_executable(test_field_map_placements test_field_map_placements.cpp)
+    target_link_libraries(
+        test_field_map_placements
+        PRIVATE SHiPFieldServiceMapIO Catch2::Catch2WithMain
+    )
+    catch_discover_tests(test_field_map_placements)
+
     add_executable(test_compat_v1_0 test_compat_v1_0.cpp)
     target_link_libraries(
         test_compat_v1_0

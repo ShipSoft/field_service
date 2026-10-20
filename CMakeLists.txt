@@ -85,8 +85,16 @@ target_link_libraries(
 
 if(BUILD_MAPIO)
     find_package(ROOT 6.36 REQUIRED COMPONENTS ROOTNTuple)
+    # Placement manifests are JSON. Header-only and used only in
+    # src/FieldMapPlacements.cpp, so consumers never see it; BUILD_INTERFACE
+    # keeps it out of the exported targets even for a static build.
+    find_package(nlohmann_json 3.10 CONFIG REQUIRED)
 
-    add_library(SHiPFieldServiceMapIO src/FieldMapIO.cpp)
+    add_library(
+        SHiPFieldServiceMapIO
+        src/FieldMapIO.cpp
+        src/FieldMapPlacements.cpp
+    )
     set_target_properties(
         SHiPFieldServiceMapIO
         PROPERTIES EXPORT_NAME FieldServiceMapIO
@@ -105,7 +113,11 @@ if(BUILD_MAPIO)
     target_link_libraries(
         SHiPFieldServiceMapIO
         PUBLIC SHiPFieldService
-        PRIVATE ROOT::ROOTNTuple ROOT::RIO ROOT::Core
+        PRIVATE
+            ROOT::ROOTNTuple
+            ROOT::RIO
+            ROOT::Core
+            $<BUILD_INTERFACE:nlohmann_json::nlohmann_json>
     )
 endif()
 

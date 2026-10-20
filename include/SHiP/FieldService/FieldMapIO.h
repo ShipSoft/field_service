@@ -77,4 +77,24 @@ class FieldMapSource final : public IFieldSource {
     std::vector<FieldRegion> regions_;
 };
 
+/// Placement manifest version this library reads (docs/placements_format.md).
+inline constexpr int kPlacementsFormatVersion = 1;
+
+/// Contents of a placement manifest: where each magnet's map sits, and the
+/// geometry version those positions were taken from.
+struct FieldMapPlacements {
+    std::string geometry_package;
+    std::string geometry_version;
+    /// One entry per magnet, in manifest order. `file` is absolute: map files
+    /// are looked up next to the manifest.
+    std::vector<FieldMapSource::MagnetConfig> magnets;
+};
+
+/// Read the placement manifest at `path`, resolved as in
+/// `resolveFieldMapPath` (so a bare "placements.json" finds the one under
+/// $SHIPFIELD_ROOT/share/field/). Throws `std::runtime_error` if the file is
+/// not valid JSON, has an unknown `format_version`, or a magnet entry is
+/// malformed or refers to a map the manifest does not list.
+[[nodiscard]] FieldMapPlacements readFieldMapPlacements(std::string const& path);
+
 }  // namespace SHiP
