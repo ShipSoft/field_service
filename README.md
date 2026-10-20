@@ -83,6 +83,13 @@ Map files are resolved relative to `$SHIPFIELD_ROOT/share/field/` when a bare
 filename is passed; the pixi activation script sets `SHIPFIELD_ROOT` to the
 pixi environment prefix by default.
 
+The SHiP muon shield and spectrometer maps, converted from FairShip, come in
+the `ship-field-maps` package from
+[ShipSoft/field_maps](https://github.com/ShipSoft/field_maps). It installs
+them under `share/field/`, together with `placements.json` and
+`field_maps.libsonnet`. Those two files give each map's position in the
+geometry, which this format deliberately leaves out.
+
 ## Build directly with CMake
 
 If you prefer to bring your own dependencies:
