@@ -62,6 +62,8 @@ outputs:
       - libboost-devel
       - eigen
       - root_base
+      # Placement manifests (MapIO, header-only, private).
+      - nlohmann_json
       - root_cxx_standard ${{ cxx_standard }}.*
 
   - package:

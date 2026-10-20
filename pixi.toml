@@ -35,6 +35,8 @@ expat = "*"
 
 # Required by the MapIO component (field-map file I/O) and the tools.
 root = ">=6.36"
+# Header-only JSON parser for placement manifests, used inside MapIO only.
+nlohmann_json = ">=3.10"
 
 # Build toolchain.
 cmake = ">=3.28"
