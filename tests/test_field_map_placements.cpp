@@ -14,9 +14,11 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <optional>
 #include <random>
 #include <stdexcept>
 #include <string>
+#include <system_error>
 
 namespace {
 
@@ -45,6 +47,35 @@ struct FieldDir {
         std::ofstream{path} << content;
         return path.string();
     }
+};
+
+/// Points SHIPFIELD_ROOT at `root` and changes into `cwd`; restores both on
+/// scope exit, also when the test throws.
+class ProcessStateGuard {
+   public:
+    ProcessStateGuard(std::filesystem::path const& root, std::filesystem::path const& cwd)
+        : cwd_(std::filesystem::current_path()) {
+        if (auto const* old = std::getenv("SHIPFIELD_ROOT"))
+            root_ = old;
+        ::setenv("SHIPFIELD_ROOT", root.c_str(), 1);
+        std::filesystem::current_path(cwd);
+    }
+    ProcessStateGuard(ProcessStateGuard const&) = delete;
+    ProcessStateGuard& operator=(ProcessStateGuard const&) = delete;
+    ProcessStateGuard(ProcessStateGuard&&) = delete;
+    ProcessStateGuard& operator=(ProcessStateGuard&&) = delete;
+    ~ProcessStateGuard() {
+        std::error_code ec;
+        std::filesystem::current_path(cwd_, ec);
+        if (root_)
+            ::setenv("SHIPFIELD_ROOT", root_->c_str(), 1);
+        else
+            ::unsetenv("SHIPFIELD_ROOT");
+    }
+
+   private:
+    std::filesystem::path cwd_;
+    std::optional<std::string> root_;
 };
 
 std::string const kManifest = R"({
@@ -94,19 +125,9 @@ TEST_CASE("Placements.ReadsMagnetsAndGeometry", "[placements]") {
 TEST_CASE("Placements.ResolvesBareNameUnderShipfieldRoot", "[placements]") {
     FieldDir const fd("bare");
     (void)fd.write(kManifest);
-    auto const* old = std::getenv("SHIPFIELD_ROOT");
-    std::string const saved = old ? old : "";
-    ::setenv("SHIPFIELD_ROOT", fd.root.c_str(), 1);
-
     // Run from elsewhere, so the bare name can only be found via the env var.
-    auto const cwd = std::filesystem::current_path();
-    std::filesystem::current_path(fd.root);
+    ProcessStateGuard const guard(fd.root, fd.root);
     auto const p = SHiP::readFieldMapPlacements("placements.json");
-    std::filesystem::current_path(cwd);
-    if (old)
-        ::setenv("SHIPFIELD_ROOT", saved.c_str(), 1);
-    else
-        ::unsetenv("SHIPFIELD_ROOT");
 
     REQUIRE(p.magnets.size() == 2u);
     CHECK(std::filesystem::exists(p.magnets[0].file));
@@ -137,6 +158,8 @@ TEST_CASE("Placements.RejectsMalformedManifests", "[placements]") {
     rejects("{ not json", "not valid JSON");
     rejects("[]", "top level must be an object");
     rejects(R"({"maps": {}, "magnets": []})", "format_version");
+    rejects(R"({"format_version": 4294967297, "maps": {}, "magnets": [{}]})",
+            "unsupported format_version 4294967297");
     rejects(R"({"format_version": 2, "maps": {}, "magnets": [{}]})",
             "unsupported format_version 2");
     rejects(R"({"format_version": 1, "magnets": [{}]})", "'maps'");

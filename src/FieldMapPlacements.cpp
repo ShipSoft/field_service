@@ -52,9 +52,11 @@ json parseManifest(std::string const& path) {
     auto const version = doc.find("format_version");
     if (version == doc.end() || !version->is_number_integer())
         fail(path, "missing integer 'format_version'");
-    if (version->get<int>() != kPlacementsFormatVersion)
-        fail(path, "unsupported format_version " + std::to_string(version->get<int>()) +
-                       " (this library reads " + std::to_string(kPlacementsFormatVersion) + ")");
+    // Compare as JSON numbers: converting to int first would let an
+    // out-of-range value wrap onto a supported version.
+    if (*version != kPlacementsFormatVersion)
+        fail(path, "unsupported format_version " + version->dump() + " (this library reads " +
+                       std::to_string(kPlacementsFormatVersion) + ")");
 
     if (auto const maps = doc.find("maps"); maps == doc.end() || !maps->is_object())
         fail(path, "missing object 'maps'");
