@@ -69,8 +69,9 @@ TEST_CASE("ActsAdapter.ConvertsUnits", "[acts_adapter]") {
 
 TEST_CASE("ActsAdapter.ComposesWithPlacement", "[acts_adapter]") {
     auto const map = SHiP::test::dipoleMap();
-    SHiP::ActsFieldAdapter const adapter{SHiP::translated(
-        SHiP::zeroOutside(SHiP::makeFieldEvaluator(map), SHiP::extent(map)), {0.0, 0.0, 5000.0})};
+    SHiP::ActsFieldAdapter const adapter{
+        SHiP::translated(SHiP::zeroOutside(SHiP::makeFieldEvaluator(map), SHiP::extent(map)),
+                         SHiP::test::mm3(0.0, 0.0, 5000.0))};
     checkField(adapter, Acts::Vector3{-30.0 * mm, 10.0 * mm, 5120.0 * mm},
                SHiP::test::dipoleField(-30.0, 10.0, 120.0));
     // Past the grid: no field, and the lookup still succeeds.

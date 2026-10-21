@@ -93,23 +93,22 @@ int main(int argc, char* argv[]) {
     std::string const out_path = argv[3];
 
     std::shared_ptr<IFieldEvaluator> eval;
-    SHiP::FieldMapGrid grid;
-    SHiP::FieldMapSymmetry symmetry;
+    SHiP::FieldBox extent;
     try {
-        auto map = SHiP::readFieldMap(map_path, map_name);
-        grid = map.grid;
-        symmetry = map.symmetry;
+        auto const map = SHiP::readFieldMap(map_path, map_name);
+        extent = SHiP::extent(map);
         eval = SHiP::makeFieldEvaluator(map);
     } catch (std::exception const& e) {
         std::println(stderr, "error: {}", e.what());
         return 1;
     }
 
-    // Grid extents, reflected on mirrored axes; overridden by the arguments.
+    // The map's extent (mm), reflected on mirrored axes; overridden by the
+    // arguments.
     std::array<double, 3> lo{}, hi{};
     for (std::size_t a = 0; a < 3; ++a) {
-        lo[a] = symmetry.mirror[a] ? -grid.max[a] : grid.min[a];
-        hi[a] = grid.max[a];
+        lo.at(a) = extent.min.at(a).numerical_value_in(SHiP::units::mm);
+        hi.at(a) = extent.max.at(a).numerical_value_in(SHiP::units::mm);
     }
     if (argc == 10) {
         try {

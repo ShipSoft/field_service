@@ -34,7 +34,7 @@ void usage(const char* prog) {
 void print(SHiP::FieldMap const& m) {
     std::println("map '{}'", m.name);
     for (auto const [a, axis] : std::views::enumerate(std::string_view{"xyz"})) {
-        std::print("  {}: [{}, {}] mm, {} nodes", axis, m.grid.min.at(a), m.grid.max.at(a),
+        std::print("  {}: [{}, {}], {} nodes", axis, m.grid.min.at(a), m.grid.max.at(a),
                    m.grid.n.at(a));
         if (m.symmetry.mirror.at(a)) {
             auto const names = m.symmetry.parity.at(a) | std::views::transform([](SHiP::Parity p) {

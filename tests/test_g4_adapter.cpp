@@ -43,8 +43,9 @@ TEST_CASE("G4Adapter.ConvertsUnits", "[g4_adapter]") {
 
 TEST_CASE("G4Adapter.ComposesWithPlacement", "[g4_adapter]") {
     auto const map = SHiP::test::dipoleMap();
-    SHiP::G4MagFieldAdapter const adapter{SHiP::translated(
-        SHiP::zeroOutside(SHiP::makeFieldEvaluator(map), SHiP::extent(map)), {0.0, 0.0, 5000.0})};
+    SHiP::G4MagFieldAdapter const adapter{
+        SHiP::translated(SHiP::zeroOutside(SHiP::makeFieldEvaluator(map), SHiP::extent(map)),
+                         SHiP::test::mm3(0.0, 0.0, 5000.0))};
     // Positions in metres must reach the evaluator as the same point in mm.
     checkField(adapter, {-0.03 * CLHEP::m, 0.01 * CLHEP::m, 5.12 * CLHEP::m},
                SHiP::test::dipoleField(-30.0, 10.0, 120.0));

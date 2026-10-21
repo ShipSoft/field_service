@@ -10,6 +10,7 @@
 
 #include "SHiP/FieldService/IFieldSource.h"
 
+#include <SHiP/Units.hpp>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -28,10 +29,10 @@ using ConstFieldMapView = Kokkos::mdspan<float const, Kokkos::dextents<std::size
 
 /// Equidistant Cartesian grid in the map's local frame. Axis `a` has `n[a]`
 /// nodes; node `i` sits at `min[a] + i * (max[a] - min[a]) / (n[a] - 1)`, so
-/// both ends are nodes. Lengths in mm.
+/// both ends are nodes.
 struct FieldMapGrid {
-    std::array<double, 3> min{};
-    std::array<double, 3> max{};
+    Vec3<Length> min{};
+    Vec3<Length> max{};
     std::array<std::uint32_t, 3> n{};
 
     /// Number of nodes, `n[0] * n[1] * n[2]`.
@@ -43,8 +44,8 @@ struct FieldMapGrid {
     [[nodiscard]] ConstFieldMapView view(std::vector<float> const& values) const;
     /// A view of a temporary would dangle.
     void view(std::vector<float>&& values) const = delete;
-    /// Position (mm) of node `i` on axis `axis`.
-    [[nodiscard]] double node(std::size_t axis, std::size_t i) const;
+    /// Position of node `i` on axis `axis`.
+    [[nodiscard]] Length node(std::size_t axis, std::size_t i) const;
 };
 
 /// How a field component behaves under a reflection. The value is the factor
@@ -103,26 +104,26 @@ void validate(FieldMap const& map);
 /// returned evaluator owns a copy of the values, so `map` may be discarded.
 [[nodiscard]] std::shared_ptr<IFieldEvaluator> makeFieldEvaluator(FieldMap const& map);
 
-/// Axis-aligned box, lengths in mm.
+/// Axis-aligned box.
 struct FieldBox {
-    std::array<double, 3> min{};
-    std::array<double, 3> max{};
+    Vec3<Length> min{};
+    Vec3<Length> max{};
 
-    /// True if (x, y, z) mm lies inside the box or on its boundary; false if
+    /// True if (x, y, z) lies inside the box or on its boundary; false if
     /// any coordinate is NaN.
-    [[nodiscard]] bool contains(double x, double y, double z) const;
+    [[nodiscard]] bool contains(Length x, Length y, Length z) const;
 };
 
 /// Region `map` covers in its local frame. A mirrored axis covers
 /// [-max, max], since its grid stores only the half at or above 0.
 [[nodiscard]] FieldBox extent(FieldMap const& map);
 
-/// Evaluator for `inner` placed with its origin at `offset` (mm): the field at
+/// Evaluator for `inner` placed with its origin at `offset`: the field at
 /// p is `inner`'s field at p - offset. Returns `inner` itself for a zero
 /// offset. Throws `std::invalid_argument` if `inner` is null or `offset` is
 /// not finite.
 [[nodiscard]] std::shared_ptr<IFieldEvaluator> translated(std::shared_ptr<IFieldEvaluator> inner,
-                                                          std::array<double, 3> const& offset);
+                                                          Vec3<Length> const& offset);
 
 /// Evaluator that returns `inner`'s field inside `box`, given in `inner`'s
 /// frame, and 0 outside it, where map evaluators would clamp. Use

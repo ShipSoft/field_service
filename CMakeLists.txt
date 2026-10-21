@@ -67,7 +67,7 @@ FetchContent_MakeAvailable(covfie)
 # Core library (no Geant4 dependency)
 # ----------------------------------------------------------------------------
 
-add_library(SHiPFieldService src/CovfieFieldSource.cpp src/FieldMap.cpp)
+add_library(SHiPFieldService src/FieldMap.cpp src/FieldMapEvaluator.cpp)
 set_target_properties(SHiPFieldService PROPERTIES EXPORT_NAME FieldService)
 add_library(SHiP::FieldService ALIAS SHiPFieldService)
 
@@ -190,7 +190,7 @@ if(BUILD_ACTS_ADAPTER)
 endif()
 
 # ----------------------------------------------------------------------------
-# Tools (.cvf conversion utilities)
+# Tools (map conversion, inspection and plotting)
 # ----------------------------------------------------------------------------
 
 if(BUILD_TOOLS)
