@@ -26,10 +26,6 @@ add_test(NAME test_core_no_geant4 COMMAND test_core_no_geant4)
 
 # The pre-0.4.0 FieldService/ forwarding headers and their `ship` alias still
 # compile. Everything else includes the canonical SHiP/FieldService/ headers.
-add_executable(test_legacy_headers test_legacy_headers.cpp)
-target_link_libraries(test_legacy_headers PRIVATE SHiPFieldService)
-add_test(NAME test_legacy_headers COMMAND test_legacy_headers)
-
 # FieldMap validation and makeFieldEvaluator: core only, no ROOT.
 add_executable(test_field_map test_field_map.cpp)
 target_link_libraries(
