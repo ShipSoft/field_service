@@ -58,33 +58,6 @@ else()
 endif()
 unset(_SHiPFS_mapio_target_file)
 
-# Transitional names for the stuttering pre-0.4.0 spellings, scheduled for
-# removal in 0.5.0. Plain INTERFACE IMPORTED targets rather than ALIAS, because
-# install(EXPORT) does not mark its imported targets GLOBAL and ALIAS refuses a
-# non-global one. The component names passed to find_package (G4Adapter,
-# ActsAdapter, MapIO) are unchanged; only the target spellings moved.
-foreach(
-    _SHiPFS_pair IN
-    ITEMS
-        "SHiPFieldService;FieldService"
-        "G4Adapter;FieldServiceG4Adapter"
-        "ActsAdapter;FieldServiceActsAdapter"
-        "MapIO;FieldServiceMapIO"
-)
-    list(GET _SHiPFS_pair 0 _SHiPFS_old)
-    list(GET _SHiPFS_pair 1 _SHiPFS_new)
-    if(TARGET SHiP::${_SHiPFS_new} AND NOT TARGET SHiPFieldService::${_SHiPFS_old})
-        add_library(SHiPFieldService::${_SHiPFS_old} INTERFACE IMPORTED)
-        set_target_properties(
-            SHiPFieldService::${_SHiPFS_old}
-            PROPERTIES INTERFACE_LINK_LIBRARIES SHiP::${_SHiPFS_new}
-        )
-    endif()
-endforeach()
-unset(_SHiPFS_pair)
-unset(_SHiPFS_old)
-unset(_SHiPFS_new)
-
 check_required_components(SHiPFieldService)
 
 set(CMAKE_PREFIX_PATH "${_SHiPFS_saved_CMAKE_PREFIX_PATH}")
