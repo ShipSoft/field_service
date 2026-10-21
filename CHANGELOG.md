@@ -2,6 +2,45 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2026-10-21
+
+### Features
+
+- Warn at compile time about the deprecated .cvf API
+- *(tools)* Let fairship_to_fieldmap set the provenance source
+- *(mapio)* Read magnet placements from a JSON manifest
+
+### Bug fixes
+
+- Return NaN for NaN positions instead of indexing the grid with NaN
+- *(cmake)* Accept only the requested minor version while at 0.x
+- *(tools)* Print full precision in fieldmap_dump, parse plot ranges strictly
+- *(mapio)* Compare format_version without narrowing it
+
+### Refactor
+
+- Include the canonical SHiP/FieldService headers internally
+- [**breaking**] Drop the pre-0.4.0 spellings
+
+### Documentation
+
+- Use the current CMake target names and SHiP namespace
+- Require only a thread-safe evaluator in the G4 adapter comment
+- Point to the ship-field-maps package
+
+### Testing
+
+- Compile and check the Geant4 adapter
+- Give temporary map files unique names per run
+
+### Miscellaneous
+
+- Add advisory builds against ShipSoft library mains
+- Build and test on linux-aarch64
+
+### Build
+
+- Resolve SHiP packages from ship-experiment/stable
 ## [0.4.0] - 2026-10-13
 
 ### Bug fixes
