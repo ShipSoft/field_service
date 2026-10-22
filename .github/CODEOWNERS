@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: 2026 CERN for the benefit of the SHiP Collaboration
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
+# Global owners. See https://docs.github.com/articles/about-code-owners
+
+* @olantwin @Gfrisella  # Oliver Lantwin (U Siegen), Guglielmo Frisella (U Zürich)
