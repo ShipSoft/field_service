@@ -13,6 +13,7 @@
 #include <cmath>
 #include <limits>
 #include <stdexcept>
+#include <vector>
 
 namespace {
 
@@ -34,13 +35,22 @@ void checkField(SHiP::IFieldEvaluator const& eval, double x, double y, double z,
 
 }  // namespace
 
-TEST_CASE("FieldMap.GridIndexIsZFastest", "[field_map]") {
+TEST_CASE("FieldMap.GridViewIsZFastest", "[field_map]") {
     SHiP::FieldMapGrid const g{{0, 0, 0}, {1, 1, 1}, {2, 3, 4}};
     CHECK(g.size() == 24u);
-    CHECK(g.index(0, 0, 1) == 1u);
-    CHECK(g.index(0, 1, 0) == 4u);
-    CHECK(g.index(1, 0, 0) == 12u);
     CHECK(g.node(2, 3) == 1.0);
+
+    std::vector<float> values(g.size());
+    auto const v = g.view(values);
+    CHECK(v.extent(0) == 2u);
+    CHECK(v.extent(1) == 3u);
+    CHECK(v.extent(2) == 4u);
+    CHECK(&v[0, 0, 1] == &values[1]);
+    CHECK(&v[0, 1, 0] == &values[4]);
+    CHECK(&v[1, 0, 0] == &values[12]);
+
+    std::vector<float> wrong(g.size() - 1);
+    CHECK_THROWS_AS(g.view(wrong), std::invalid_argument);
 }
 
 TEST_CASE("FieldMap.ValidateRejectsMalformedMaps", "[field_map]") {
@@ -69,7 +79,9 @@ TEST_CASE("FieldMap.ValidateRejectsMalformedMaps", "[field_map]") {
     CHECK_THROWS_AS(SHiP::validate(bad), std::invalid_argument);
 
     bad = m;
-    bad.symmetry.parity[4] = 0;
+    // Deliberately out of range, as a corrupt file could deliver.
+    bad.symmetry.parity[1][1] =
+        static_cast<SHiP::Parity>(0);  // NOLINT(clang-analyzer-optin.core.EnumCastOutOfRange)
     CHECK_THROWS_AS(SHiP::validate(bad), std::invalid_argument);
 
     bad = m;
@@ -86,15 +98,7 @@ TEST_CASE("FieldMap.EvaluatorInterpolatesAndClamps", "[field_map]") {
     SHiP::FieldMap m;
     m.name = "full";
     m.grid = {{-100, -50, -200}, {100, 50, 200}, {5, 5, 5}};
-    for (std::size_t i = 0; i < 5; ++i)
-        for (std::size_t j = 0; j < 5; ++j)
-            for (std::size_t k = 0; k < 5; ++k) {
-                auto const B = SHiP::test::dipoleField(m.grid.node(0, i), m.grid.node(1, j),
-                                                       m.grid.node(2, k));
-                m.bx.push_back(static_cast<float>(B[0]));
-                m.by.push_back(static_cast<float>(B[1]));
-                m.bz.push_back(static_cast<float>(B[2]));
-            }
+    SHiP::test::sampleNodes(m, SHiP::test::dipoleField);
     auto const eval = SHiP::makeFieldEvaluator(m);
     REQUIRE(eval);
 

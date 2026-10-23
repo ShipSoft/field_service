@@ -12,37 +12,42 @@
 #include "SHiP/FieldService/FieldMap.h"
 #include "SHiP/FieldService/FieldMapIO.h"
 
+#include <cstdio>
 #include <exception>
-#include <format>
 #include <iostream>
 #include <mp-units/systems/si.h>
-#include <string>
+#include <print>
+#include <ranges>
+#include <string_view>
 
 namespace {
 
 void usage(const char* prog) {
-    std::cerr << "Usage: " << prog << " <file.root>          print metadata of every map\n"
-              << "       " << prog << " <file.root> <map>    evaluate <map> at points\n"
-              << "In the second form, reads '<x> <y> <z>' (mm) lines from stdin and writes\n"
-              << "'x y z Bx By Bz' (mm, Tesla) to stdout.\n";
+    std::print(stderr,
+               "Usage: {0} <file.root>          print metadata of every map\n"
+               "       {0} <file.root> <map>    evaluate <map> at points\n"
+               "In the second form, reads '<x> <y> <z>' (mm) lines from stdin and writes\n"
+               "'x y z Bx By Bz' (mm, Tesla) to stdout.\n",
+               prog);
 }
 
 void print(SHiP::FieldMap const& m) {
-    static constexpr char const* kAxis = "xyz";
-    std::cout << "map '" << m.name << "'\n";
-    for (std::size_t a = 0; a < 3; ++a) {
-        std::cout << "  " << kAxis[a] << ": [" << m.grid.min[a] << ", " << m.grid.max[a] << "] mm, "
-                  << m.grid.n[a] << " nodes";
-        if (m.symmetry.mirror[a])
-            std::cout << ", mirrored, parity (" << int{m.symmetry.parity[3 * a]} << ", "
-                      << int{m.symmetry.parity[3 * a + 1]} << ", "
-                      << int{m.symmetry.parity[3 * a + 2]} << ")";
-        std::cout << '\n';
+    std::println("map '{}'", m.name);
+    for (auto const [a, axis] : std::views::enumerate(std::string_view{"xyz"})) {
+        std::print("  {}: [{}, {}] mm, {} nodes", axis, m.grid.min.at(a), m.grid.max.at(a),
+                   m.grid.n.at(a));
+        if (m.symmetry.mirror.at(a)) {
+            auto const names = m.symmetry.parity.at(a) | std::views::transform([](SHiP::Parity p) {
+                                   return p == SHiP::Parity::odd ? "odd" : "even";
+                               });
+            std::print(", mirrored, parity (Bx, By, Bz) = ({:n:})", names);
+        }
+        std::println();
     }
-    std::cout << "  source:   " << m.provenance.source << '\n'
-              << "  comment:  " << m.provenance.comment << '\n'
-              << "  producer: " << m.provenance.producer << '\n'
-              << "  created:  " << m.provenance.created_utc << '\n';
+    std::println("  source:   {}", m.provenance.source);
+    std::println("  comment:  {}", m.provenance.comment);
+    std::println("  producer: {}", m.provenance.producer);
+    std::println("  created:  {}", m.provenance.created_utc);
 }
 
 }  // namespace
@@ -65,11 +70,11 @@ int main(int argc, char** argv) {
             auto const B = eval->at(x * mm, y * mm, z * mm);
             // Shortest round-trip form: the 6 significant digits iostreams
             // default to are too coarse for closure tests.
-            std::cout << std::format("{} {} {} {} {} {}\n", x, y, z, B[0].numerical_value_in(T),
-                                     B[1].numerical_value_in(T), B[2].numerical_value_in(T));
+            std::println("{} {} {} {} {} {}", x, y, z, B[0].numerical_value_in(T),
+                         B[1].numerical_value_in(T), B[2].numerical_value_in(T));
         }
     } catch (std::exception const& e) {
-        std::cerr << "error: " << e.what() << '\n';
+        std::println(stderr, "error: {}", e.what());
         return 1;
     }
     return 0;

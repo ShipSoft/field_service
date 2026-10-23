@@ -35,7 +35,8 @@ namespace SHiP {
 /// such failure is reported to `on_error`, if given.
 class ActsFieldAdapter final : public Acts::MagneticFieldProvider {
    public:
-    using ErrorHandler = std::function<void(std::string_view)>;
+    /// May own state that cannot be copied; it is called at most once.
+    using ErrorHandler = std::move_only_function<void(std::string_view) const>;
 
     explicit ActsFieldAdapter(std::shared_ptr<IFieldEvaluator> eval, ErrorHandler on_error = {})
         : eval_{std::move(eval)}, on_error_{std::move(on_error)} {

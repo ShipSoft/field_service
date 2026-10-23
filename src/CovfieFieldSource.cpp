@@ -17,6 +17,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -53,11 +54,13 @@ class CovfieEvaluator final : public IFieldEvaluator {
         // collect the per-component sign flips that reflection induces.
         std::array<float, 3> sign{1.0f, 1.0f, 1.0f};
         if (symmetry_.any()) {
-            for (std::size_t a = 0; a < 3; ++a) {
-                if (symmetry_.mirror[a] && p[a] < 0.0f) {
-                    p[a] = -p[a];
-                    for (std::size_t c = 0; c < 3; ++c)
-                        sign[c] *= symmetry_.parity[3 * a + c];
+            for (auto&& [mirrored, row, coord] :
+                 std::views::zip(symmetry_.mirror, symmetry_.parity, p)) {
+                if (mirrored && coord < 0.0f) {
+                    coord = -coord;
+                    for (auto&& [s, parity] : std::views::zip(sign, row)) {
+                        s *= std::to_underlying(parity);
+                    }
                 }
             }
         }

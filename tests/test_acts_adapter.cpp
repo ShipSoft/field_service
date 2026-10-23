@@ -91,6 +91,16 @@ TEST_CASE("ActsAdapter.ReportsTheFirstFailureOnce", "[acts_adapter]") {
     CHECK(last == "boom");
 }
 
+TEST_CASE("ActsAdapter.AcceptsMoveOnlyHandlers", "[acts_adapter]") {
+    auto const reports = std::make_shared<int>(0);
+    // Owning a unique_ptr makes the handler move-only, as a logger sink might be.
+    SHiP::ActsFieldAdapter const adapter{std::make_shared<ThrowingEvaluator>(),
+                                         [count = reports, owned = std::make_unique<int>(0)](
+                                             std::string_view /*what*/) { ++*count; }};
+    CHECK(lookupFails(adapter, Acts::Vector3::Zero()));
+    CHECK(*reports == 1);
+}
+
 TEST_CASE("ActsAdapter.FailsNonFiniteLookups", "[acts_adapter]") {
     SHiP::ActsFieldAdapter const nan_field{std::make_shared<NaNEvaluator>()};
     CHECK(lookupFails(nan_field, Acts::Vector3::Zero()));
