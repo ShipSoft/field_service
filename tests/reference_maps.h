@@ -12,6 +12,7 @@
 
 #include <array>
 #include <cstddef>
+#include <ranges>
 #include <vector>
 
 namespace SHiP::test {
@@ -23,20 +24,31 @@ inline std::array<double, 3> dipoleField(double x, double y, double z) {
     return {1e-4 * x * y, 1.0 + 2e-3 * z, 1e-4 * y * z};
 }
 
+/// Fill `m`'s values with `field(x, y, z)` (mm -> T) sampled at every node.
+template <typename Field>
+void sampleNodes(FieldMap& m, Field const& field) {
+    for (auto* values : {&m.bx, &m.by, &m.bz}) {
+        values->assign(m.grid.size(), 0.0f);
+    }
+    auto const bx = m.grid.view(m.bx);
+    auto const by = m.grid.view(m.by);
+    auto const bz = m.grid.view(m.bz);
+    auto const nodes = [&bx](std::size_t axis) { return std::views::iota(0uz, bx.extent(axis)); };
+    for (auto const [i, j, k] : std::views::cartesian_product(nodes(0), nodes(1), nodes(2))) {
+        auto const B = field(m.grid.node(0, i), m.grid.node(1, j), m.grid.node(2, k));
+        bx[i, j, k] = static_cast<float>(B[0]);
+        by[i, j, k] = static_cast<float>(B[1]);
+        bz[i, j, k] = static_cast<float>(B[2]);
+    }
+}
+
 /// Stored quadrant of dipoleField: x in [0, 100], y in [0, 50], z in [-200, 200].
 inline FieldMap dipoleMap() {
     FieldMap m;
     m.name = "dipole_quadrant";
     m.grid = {{0.0, 0.0, -200.0}, {100.0, 50.0, 200.0}, {3, 3, 5}};
     m.symmetry = FieldMapSymmetry::quadrantDipole();
-    for (std::size_t i = 0; i < m.grid.n[0]; ++i)
-        for (std::size_t j = 0; j < m.grid.n[1]; ++j)
-            for (std::size_t k = 0; k < m.grid.n[2]; ++k) {
-                auto const B = dipoleField(m.grid.node(0, i), m.grid.node(1, j), m.grid.node(2, k));
-                m.bx.push_back(static_cast<float>(B[0]));
-                m.by.push_back(static_cast<float>(B[1]));
-                m.bz.push_back(static_cast<float>(B[2]));
-            }
+    sampleNodes(m, dipoleField);
     m.provenance = {"tests/reference_maps.h", "reference map for format 1.0",
                     "make_reference_field_map", "2026-09-29T00:00:00Z"};
     return m;

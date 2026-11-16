@@ -10,6 +10,7 @@
 #include <ROOT/RNTupleReader.hxx>
 #include <ROOT/RNTupleWriter.hxx>
 
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <cstddef>
@@ -18,6 +19,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <ranges>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -33,6 +35,27 @@ constexpr char const* kCartesian = "cartesian";
 constexpr char const* kMillimetre = "mm";
 constexpr char const* kTesla = "T";
 constexpr char const* kZFastest = "xyz_z_fastest";
+
+/// `parity` as the file stores it: the 3×3 matrix row by row.
+using StoredParity = std::array<std::int8_t, 9>;
+
+StoredParity to_stored(FieldMapSymmetry::Matrix const& parity) {
+    StoredParity stored{};
+    std::ranges::copy(parity | std::views::join |
+                          std::views::transform([](Parity p) { return std::to_underlying(p); }),
+                      stored.begin());
+    return stored;
+}
+
+/// Unknown values come through as they are, for validate() to reject.
+FieldMapSymmetry::Matrix from_stored(StoredParity const& stored) {
+    auto parity = FieldMapSymmetry{}.parity;
+    auto flat = parity | std::views::join;
+    std::ranges::copy(
+        stored | std::views::transform([](std::int8_t v) { return static_cast<Parity>(v); }),
+        flat.begin());
+    return parity;
+}
 
 [[noreturn]] void fail(std::string const& path, std::string const& what) {
     throw std::runtime_error(path + ": " + what);
@@ -68,7 +91,7 @@ std::vector<FieldMap> read_maps(std::string const& path, std::string const* only
         auto axis_max = reader->GetView<std::array<double, 3>>("axis_max");
         auto axis_n = reader->GetView<std::array<std::uint32_t, 3>>("axis_n");
         auto mirror = reader->GetView<std::array<bool, 3>>("mirror");
-        auto parity = reader->GetView<std::array<std::int8_t, 9>>("parity");
+        auto parity = reader->GetView<StoredParity>("parity");
         auto bx = reader->GetView<std::vector<float>>("bx");
         auto by = reader->GetView<std::vector<float>>("by");
         auto bz = reader->GetView<std::vector<float>>("bz");
@@ -95,7 +118,7 @@ std::vector<FieldMap> read_maps(std::string const& path, std::string const* only
             FieldMap m;
             m.name = name(i);
             m.grid = {axis_min(i), axis_max(i), axis_n(i)};
-            m.symmetry = {mirror(i), parity(i)};
+            m.symmetry = {.mirror = mirror(i), .parity = from_stored(parity(i))};
             m.bx = bx(i);
             m.by = by(i);
             m.bz = bz(i);
@@ -156,7 +179,7 @@ void writeFieldMaps(std::string const& path, std::span<FieldMap const> maps,
     auto by = model->MakeField<std::vector<float>>("by");
     auto bz = model->MakeField<std::vector<float>>("bz");
     auto mirror = model->MakeField<std::array<bool, 3>>("mirror");
-    auto parity = model->MakeField<std::array<std::int8_t, 9>>("parity");
+    auto const parity = model->MakeField<StoredParity>("parity");
     auto source = model->MakeField<std::string>("source");
     auto comment = model->MakeField<std::string>("comment");
     auto producer = model->MakeField<std::string>("producer");
@@ -187,7 +210,7 @@ void writeFieldMaps(std::string const& path, std::span<FieldMap const> maps,
         *by = m.by;
         *bz = m.bz;
         *mirror = m.symmetry.mirror;
-        *parity = m.symmetry.parity;
+        *parity = to_stored(m.symmetry.parity);
         *source = m.provenance.source;
         *comment = m.provenance.comment;
         *producer = m.provenance.producer.empty() ? "SHiPFieldService " SHIPFIELD_VERSION
@@ -215,15 +238,14 @@ std::shared_ptr<IFieldEvaluator> loadFieldMap(std::string const& file, std::stri
     return eval;
 }
 
-FieldMapSource::FieldMapSource(std::vector<MagnetConfig> magnets) {
-    regions_.reserve(magnets.size());
-    for (auto& m : magnets) {
-        FieldRegion r;
-        r.field = translated(loadFieldMap(m.file, m.map), m.translation);
-        r.name = std::move(m.name);
-        r.volume_pattern = std::move(m.volume_pattern);
-        regions_.push_back(std::move(r));
-    }
-}
+FieldMapSource::FieldMapSource(std::vector<MagnetConfig> magnets)
+    : regions_{magnets | std::views::as_rvalue | std::views::transform([](MagnetConfig m) {
+                   return FieldRegion{
+                       .name = std::move(m.name),
+                       .volume_pattern = std::move(m.volume_pattern),
+                       .field = translated(loadFieldMap(m.file, m.map), m.translation),
+                   };
+               }) |
+               std::ranges::to<std::vector>()} {}
 
 }  // namespace SHiP

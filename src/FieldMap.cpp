@@ -8,8 +8,10 @@
 #include <cstddef>
 #include <cstdlib>
 #include <filesystem>
+#include <format>
 #include <limits>
 #include <memory>
+#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -34,16 +36,37 @@ std::size_t FieldMapGrid::size() const {
     return static_cast<std::size_t>(n[0]) * n[1] * n[2];
 }
 
+namespace {
+
+template <typename View, typename Values>
+View view_of(FieldMapGrid const& grid, Values& values) {
+    if (values.size() != grid.size()) {
+        throw std::invalid_argument(std::format("FieldMapGrid::view: {} values for a grid of {}",
+                                                values.size(), grid.size()));
+    }
+    return View{values.data(), grid.n[0], grid.n[1], grid.n[2]};
+}
+
+}  // namespace
+
+FieldMapView FieldMapGrid::view(std::vector<float>& values) const {
+    return view_of<FieldMapView>(*this, values);
+}
+
+ConstFieldMapView FieldMapGrid::view(std::vector<float> const& values) const {
+    return view_of<ConstFieldMapView>(*this, values);
+}
+
 double FieldMapGrid::node(std::size_t axis, std::size_t i) const {
     return min[axis] +
            static_cast<double>(i) * (max[axis] - min[axis]) / static_cast<double>(n[axis] - 1);
 }
 
 FieldMapSymmetry FieldMapSymmetry::quadrantDipole() {
+    using enum Parity;
     FieldMapSymmetry s;
     s.mirror = {true, true, false};
-    // Row x: Bx odd, By even, Bz even. Row y: Bx odd, By even, Bz odd.
-    s.parity = {-1, 1, 1, -1, 1, -1, 1, 1, 1};
+    s.parity = {Row{odd, even, even}, Row{odd, even, odd}, kEven};
     return s;
 }
 
@@ -67,17 +90,22 @@ void validate(FieldMap const& map) {
             fail("node count overflows");
         total *= g.n[a];
     }
-    for (auto const p : map.symmetry.parity)
-        if (p != 1 && p != -1)
-            fail("parity entries must be +1 or -1");
+    // Parity has a fixed underlying type, so any int8 value casts to it.
+    for (auto const p : map.symmetry.parity | std::views::join) {
+        if (p != Parity::odd && p != Parity::even) {
+            fail("parity entries must be odd or even");
+        }
+    }
     if (map.bx.size() != total || map.by.size() != total || map.bz.size() != total)
         fail("expected " + std::to_string(total) + " values per component, got " +
              std::to_string(map.bx.size()) + "/" + std::to_string(map.by.size()) + "/" +
              std::to_string(map.bz.size()));
     auto const requireFinite = [&fail](char component, std::vector<float> const& values) {
-        for (std::size_t i = 0; i < values.size(); ++i)
-            if (!std::isfinite(values[i]))
-                fail(std::string("B") + component + "[" + std::to_string(i) + "] is not finite");
+        for (auto const [i, v] : std::views::enumerate(values)) {
+            if (!std::isfinite(v)) {
+                fail(std::format("B{}[{}] is not finite", component, i));
+            }
+        }
     };
     requireFinite('x', map.bx);
     requireFinite('y', map.by);
