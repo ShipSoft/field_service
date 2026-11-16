@@ -57,6 +57,18 @@ FieldMapSymmetry::Matrix from_stored(StoredParity const& stored) {
     return parity;
 }
 
+/// Grid bounds as the file stores them: doubles in mm.
+using StoredLengths = std::array<double, 3>;
+
+StoredLengths to_stored(Vec3<Length> const& v) {
+    return {v[0].numerical_value_in(units::mm), v[1].numerical_value_in(units::mm),
+            v[2].numerical_value_in(units::mm)};
+}
+
+Vec3<Length> from_stored(StoredLengths const& v) {
+    return {v[0] * units::mm, v[1] * units::mm, v[2] * units::mm};
+}
+
 [[noreturn]] void fail(std::string const& path, std::string const& what) {
     throw std::runtime_error(path + ": " + what);
 }
@@ -87,8 +99,8 @@ std::vector<FieldMap> read_maps(std::string const& path, std::string const* only
         auto length_unit = reader->GetView<std::string>("length_unit");
         auto field_unit = reader->GetView<std::string>("field_unit");
         auto index_order = reader->GetView<std::string>("index_order");
-        auto axis_min = reader->GetView<std::array<double, 3>>("axis_min");
-        auto axis_max = reader->GetView<std::array<double, 3>>("axis_max");
+        auto axis_min = reader->GetView<StoredLengths>("axis_min");
+        auto axis_max = reader->GetView<StoredLengths>("axis_max");
         auto axis_n = reader->GetView<std::array<std::uint32_t, 3>>("axis_n");
         auto mirror = reader->GetView<std::array<bool, 3>>("mirror");
         auto parity = reader->GetView<StoredParity>("parity");
@@ -117,7 +129,8 @@ std::vector<FieldMap> read_maps(std::string const& path, std::string const* only
 
             FieldMap m;
             m.name = name(i);
-            m.grid = {axis_min(i), axis_max(i), axis_n(i)};
+            m.grid = {
+                .min = from_stored(axis_min(i)), .max = from_stored(axis_max(i)), .n = axis_n(i)};
             m.symmetry = {.mirror = mirror(i), .parity = from_stored(parity(i))};
             m.bx = bx(i);
             m.by = by(i);
@@ -171,8 +184,8 @@ void writeFieldMaps(std::string const& path, std::span<FieldMap const> maps,
     auto coordinate_system = model->MakeField<std::string>("coordinate_system");
     auto length_unit = model->MakeField<std::string>("length_unit");
     auto field_unit = model->MakeField<std::string>("field_unit");
-    auto axis_min = model->MakeField<std::array<double, 3>>("axis_min");
-    auto axis_max = model->MakeField<std::array<double, 3>>("axis_max");
+    auto const axis_min = model->MakeField<StoredLengths>("axis_min");
+    auto const axis_max = model->MakeField<StoredLengths>("axis_max");
     auto axis_n = model->MakeField<std::array<std::uint32_t, 3>>("axis_n");
     auto index_order = model->MakeField<std::string>("index_order");
     auto bx = model->MakeField<std::vector<float>>("bx");
@@ -202,8 +215,8 @@ void writeFieldMaps(std::string const& path, std::span<FieldMap const> maps,
         *coordinate_system = kCartesian;
         *length_unit = kMillimetre;
         *field_unit = kTesla;
-        *axis_min = m.grid.min;
-        *axis_max = m.grid.max;
+        *axis_min = to_stored(m.grid.min);
+        *axis_max = to_stored(m.grid.max);
         *axis_n = m.grid.n;
         *index_order = kZFastest;
         *bx = m.bx;

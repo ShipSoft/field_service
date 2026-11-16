@@ -70,8 +70,13 @@ void writeRaw(std::filesystem::path const& path, RawOverrides const& o) {
     *model->MakeField<std::string>("coordinate_system") = o.coordinate_system;
     *model->MakeField<std::string>("length_unit") = o.length_unit;
     *model->MakeField<std::string>("field_unit") = "T";
-    *model->MakeField<std::array<double, 3>>("axis_min") = m.grid.min;
-    *model->MakeField<std::array<double, 3>>("axis_max") = m.grid.max;
+    auto const in_mm = [](SHiP::Vec3<SHiP::Length> const& v) {
+        return std::array{v[0].numerical_value_in(SHiP::units::mm),
+                          v[1].numerical_value_in(SHiP::units::mm),
+                          v[2].numerical_value_in(SHiP::units::mm)};
+    };
+    *model->MakeField<std::array<double, 3>>("axis_min") = in_mm(m.grid.min);
+    *model->MakeField<std::array<double, 3>>("axis_max") = in_mm(m.grid.max);
     *model->MakeField<std::array<std::uint32_t, 3>>("axis_n") = m.grid.n;
     *model->MakeField<std::string>("index_order") = "xyz_z_fastest";
     *model->MakeField<std::vector<float>>("bx") = m.bx;
@@ -169,11 +174,16 @@ TEST_CASE("FieldMapIO.SourceSharesMapsAndTranslates", "[field_map_io]") {
     auto const maps = SHiP::test::referenceMaps();
     SHiP::writeFieldMaps(tmp.path.string(), maps);
 
-    SHiP::FieldMapSource src({
-        {"MagA", "MuonShield", tmp.path.string(), "dipole_quadrant", {}},
-        {"MagB", "Spectrometer", tmp.path.string(), "dipole_quadrant", {}},
-        {"MagC", "Shifted", tmp.path.string(), "dipole_quadrant", {0.0, 0.0, 5000.0}},
-    });
+    auto const magnet = [&tmp](char const* name, char const* volume) {
+        return SHiP::FieldMapSource::MagnetConfig{.name = name,
+                                                  .volume_pattern = volume,
+                                                  .file = tmp.path.string(),
+                                                  .map = "dipole_quadrant"};
+    };
+    auto shifted = magnet("MagC", "Shifted");
+    shifted.translation = SHiP::test::mm3(0.0, 0.0, 5000.0);
+    SHiP::FieldMapSource const src(
+        {magnet("MagA", "MuonShield"), magnet("MagB", "Spectrometer"), shifted});
     auto const& regs = src.regions();
     REQUIRE(regs.size() == 3u);
     CHECK(regs[0].name == "MagA");

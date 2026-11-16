@@ -8,7 +8,7 @@ description = "SHiP magnetic field service (framework-agnostic, covfie-backed)"
 channels = ["https://prefix.dev/ship-experiment/stable", "conda-forge"]
 platforms = ["linux-64", "linux-aarch64"]
 [dependencies]
-# Required by CovfieFieldSource (find_package mp-units CONFIG REQUIRED).
+# Quantity types in the public API (find_package mp-units CONFIG REQUIRED).
 mp-units = "*"
 
 # Canonical ShipSoft unit vocabulary (SHiP::Units, headers-only). 0.6.0 is the
