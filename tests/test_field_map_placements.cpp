@@ -55,8 +55,9 @@ class ProcessStateGuard {
    public:
     ProcessStateGuard(std::filesystem::path const& root, std::filesystem::path const& cwd)
         : cwd_(std::filesystem::current_path()) {
-        if (auto const* old = std::getenv("SHIPFIELD_ROOT"))
+        if (auto const* old = std::getenv("SHIPFIELD_ROOT")) {
             root_ = old;
+        }
         ::setenv("SHIPFIELD_ROOT", root.c_str(), 1);
         std::filesystem::current_path(cwd);
     }
@@ -67,10 +68,11 @@ class ProcessStateGuard {
     ~ProcessStateGuard() {
         std::error_code ec;
         std::filesystem::current_path(cwd_, ec);
-        if (root_)
+        if (root_) {
             ::setenv("SHIPFIELD_ROOT", root_->c_str(), 1);
-        else
+        } else {
             ::unsetenv("SHIPFIELD_ROOT");
+        }
     }
 
    private:
@@ -144,8 +146,9 @@ TEST_CASE("Placements.FeedFieldMapSource", "[placements]") {
     using Catch::Matchers::WithinAbs;
     auto const b = regs[0].field->at(-20.0 * mm, 10.0 * mm, 2090.0 * mm);
     auto const expected = SHiP::test::dipoleField(-20.0, 10.0, 50.0);
-    for (std::size_t c = 0; c < 3; ++c)
+    for (std::size_t c = 0; c < 3; ++c) {
         CHECK_THAT(b[c].numerical_value_in(T), WithinAbs(expected[c], 1e-4));
+    }
 }
 
 TEST_CASE("Placements.RejectsMalformedManifests", "[placements]") {

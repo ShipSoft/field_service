@@ -52,20 +52,23 @@ void print(SHiP::FieldMap const& m) {
 
 }  // namespace
 
-int main(int argc, char** argv) {
+int main(int argc, char* const* argv) {
     if (argc < 2 || argc > 3) {
         usage(argv[0]);
         return 1;
     }
     try {
         if (argc == 2) {
-            for (auto const& m : SHiP::readFieldMaps(argv[1]))
+            for (auto const& m : SHiP::readFieldMaps(argv[1])) {
                 print(m);
+            }
             return 0;
         }
         auto const eval = SHiP::makeFieldEvaluator(SHiP::readFieldMap(argv[1], argv[2]));
         using namespace mp_units::si::unit_symbols;
-        double x, y, z;
+        double x;
+        double y;
+        double z;
         while (std::cin >> x >> y >> z) {
             auto const B = eval->at(x * mm, y * mm, z * mm);
             // Shortest round-trip form: the 6 significant digits iostreams

@@ -69,28 +69,31 @@ int main(int argc, char** argv) {
     try {
         for (int i = 1; i < argc; ++i) {
             std::string_view const arg = argv[i];
-            auto value = [&]() -> std::string {
-                if (i + 1 >= argc)
+            auto const value = [&] -> std::string {
+                if (i + 1 >= argc) {
                     throw std::invalid_argument(std::string(arg) + " needs a value");
+                }
                 return argv[++i];
             };
-            if (arg == "--name")
+            if (arg == "--name") {
                 name = value();
-            else if (arg == "--symmetry")
+            } else if (arg == "--symmetry") {
                 symmetry = value();
-            else if (arg == "--source")
+            } else if (arg == "--source") {
                 source = value();
-            else if (arg == "--comment")
+            } else if (arg == "--comment") {
                 comment = value();
-            else if (arg == "--truncate-bits")
+            } else if (arg == "--truncate-bits") {
                 options.truncated_bits = static_cast<unsigned>(std::stoul(value()));
-            else if (arg.starts_with("-") || n_paths == paths.size())
+            } else if (arg.starts_with("-") || n_paths == paths.size()) {
                 throw std::invalid_argument("unexpected argument '" + std::string(arg) + "'");
-            else
+            } else {
                 paths[n_paths++] = arg;
+            }
         }
-        if (symmetry != "none" && symmetry != "quadrant_dipole")
+        if (symmetry != "none" && symmetry != "quadrant_dipole") {
             throw std::invalid_argument("unknown symmetry '" + symmetry + "'");
+        }
     } catch (std::exception const& e) {
         std::println(stderr, "error: {}", e.what());
         usage(argv[0]);
@@ -111,12 +114,15 @@ int main(int argc, char** argv) {
 
     // Read the single-entry Range tree.
     TTreeReader range_reader("Range", in_file.get());
-    TTreeReaderValue<float> rxMin(range_reader, "xMin"), rxMax(range_reader, "xMax"),
-        rdx(range_reader, "dx");
-    TTreeReaderValue<float> ryMin(range_reader, "yMin"), ryMax(range_reader, "yMax"),
-        rdy(range_reader, "dy");
-    TTreeReaderValue<float> rzMin(range_reader, "zMin"), rzMax(range_reader, "zMax"),
-        rdz(range_reader, "dz");
+    TTreeReaderValue<float> rxMin(range_reader, "xMin");
+    TTreeReaderValue<float> rxMax(range_reader, "xMax");
+    TTreeReaderValue<float> rdx(range_reader, "dx");
+    TTreeReaderValue<float> ryMin(range_reader, "yMin");
+    TTreeReaderValue<float> ryMax(range_reader, "yMax");
+    TTreeReaderValue<float> rdy(range_reader, "dy");
+    TTreeReaderValue<float> rzMin(range_reader, "zMin");
+    TTreeReaderValue<float> rzMax(range_reader, "zMax");
+    TTreeReaderValue<float> rdz(range_reader, "dz");
     if (!range_reader.Next()) {
         std::println(stderr, "Input file lacks a readable Range TTree");
         return 1;
@@ -165,8 +171,9 @@ int main(int argc, char** argv) {
         }
         map.grid.n[i] = static_cast<std::uint32_t>(steps + 1);
     }
-    if (symmetry == "quadrant_dipole")
+    if (symmetry == "quadrant_dipole") {
         map.symmetry = SHiP::FieldMapSymmetry::quadrantDipole();
+    }
 
     auto const total = map.grid.size();
     std::println("Grid: {} x {} x {} samples", map.grid.n[0], map.grid.n[1], map.grid.n[2]);
@@ -174,7 +181,9 @@ int main(int argc, char** argv) {
                  min[2], max[2]);
 
     TTreeReader data_reader("Data", in_file.get());
-    TTreeReaderValue<float> Bx(data_reader, "Bx"), By(data_reader, "By"), Bz(data_reader, "Bz");
+    TTreeReaderValue<float> Bx(data_reader, "Bx");
+    TTreeReaderValue<float> By(data_reader, "By");
+    TTreeReaderValue<float> Bz(data_reader, "Bz");
     if (data_reader.GetEntries() != static_cast<Long64_t>(total)) {
         std::println(stderr, "Data tree has {} entries, expected {}", data_reader.GetEntries(),
                      total);

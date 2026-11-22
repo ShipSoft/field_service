@@ -67,7 +67,7 @@ TEST_CASE("FieldMap.GridViewIsZFastest", "[field_map]") {
 }
 
 TEST_CASE("FieldMap.ValidateRejectsMalformedMaps", "[field_map]") {
-    auto m = SHiP::test::uniformMap();
+    auto const m = SHiP::test::uniformMap();
     CHECK_NOTHROW(SHiP::validate(m));
 
     auto bad = m;
@@ -132,16 +132,19 @@ TEST_CASE("FieldMap.EvaluatorAppliesQuadrantSymmetry", "[field_map]") {
     REQUIRE(eval);
     // dipoleField has exactly the parities of quadrantDipole(), so the folded
     // evaluation must agree with the analytic field in all four quadrants.
-    for (double const x : {-80.0, -30.0, 0.0, 30.0, 80.0})
-        for (double const y : {-40.0, -10.0, 10.0, 40.0})
-            for (double const z : {-150.0, 0.0, 120.0})
+    for (double const x : {-80.0, -30.0, 0.0, 30.0, 80.0}) {
+        for (double const y : {-40.0, -10.0, 10.0, 40.0}) {
+            for (double const z : {-150.0, 0.0, 120.0}) {
                 checkField(*eval, x, y, z, SHiP::test::dipoleField(x, y, z));
+            }
+        }
+    }
 }
 
 TEST_CASE("FieldMap.EvaluatorOwnsItsData", "[field_map]") {
     std::shared_ptr<SHiP::IFieldEvaluator> eval;
     {
-        auto m = SHiP::test::uniformMap();
+        auto const m = SHiP::test::uniformMap();
         eval = SHiP::makeFieldEvaluator(m);
     }
     checkField(*eval, 1, 2, 3, {0.0, -1.5, 0.0});

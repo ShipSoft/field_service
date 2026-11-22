@@ -88,11 +88,13 @@ std::vector<FieldMap> read_maps(std::string const& path, std::string const* only
         // Check the version before touching anything else: a future major
         // version may have renamed or dropped the other fields.
         auto format_major = reader->GetView<std::uint16_t>("format_major");
-        for (auto i : reader->GetEntryRange())
-            if (format_major(i) != kFieldMapFormatMajor)
+        for (auto const i : reader->GetEntryRange()) {
+            if (format_major(i) != kFieldMapFormatMajor) {
                 fail(path, "unsupported field-map format major version " +
                                std::to_string(format_major(i)) + " (this reader supports " +
                                std::to_string(kFieldMapFormatMajor) + ")");
+            }
+        }
 
         auto name = reader->GetView<std::string>("name");
         auto coordinate_system = reader->GetView<std::string>("coordinate_system");
@@ -114,13 +116,15 @@ std::vector<FieldMap> read_maps(std::string const& path, std::string const* only
 
         std::vector<FieldMap> maps;
         for (auto i : reader->GetEntryRange()) {
-            if (only && name(i) != *only)
+            if (only && name(i) != *only) {
                 continue;
-            auto expect = [&](std::string const& field, std::string const& value,
-                              char const* wanted) {
-                if (value != wanted)
+            }
+            auto const expect = [&](std::string const& field, std::string const& value,
+                                    char const* wanted) {
+                if (value != wanted) {
                     fail(path, "map '" + name(i) + "': " + field + " is '" + value +
                                    "', this reader supports only '" + wanted + "'");
+                }
             };
             expect("coordinate_system", coordinate_system(i), kCartesian);
             expect("length_unit", length_unit(i), kMillimetre);
@@ -135,7 +139,10 @@ std::vector<FieldMap> read_maps(std::string const& path, std::string const* only
             m.bx = bx(i);
             m.by = by(i);
             m.bz = bz(i);
-            m.provenance = {source(i), comment(i), producer(i), created_utc(i)};
+            m.provenance = {.source = source(i),
+                            .comment = comment(i),
+                            .producer = producer(i),
+                            .created_utc = created_utc(i)};
             validate(m);
             maps.push_back(std::move(m));
         }
@@ -160,8 +167,9 @@ std::vector<FieldMap> readFieldMaps(std::string const& path) {
 
 FieldMap readFieldMap(std::string const& path, std::string const& name) {
     auto maps = read_maps(path, &name);
-    if (maps.empty())
+    if (maps.empty()) {
         fail(path, "no field map named '" + name + "'");
+    }
     return std::move(maps.front());
 }
 
@@ -170,33 +178,34 @@ void writeFieldMaps(std::string const& path, std::span<FieldMap const> maps,
     std::set<std::string> names;
     for (auto const& m : maps) {
         validate(m);
-        if (!names.insert(m.name).second)
+        if (!names.insert(m.name).second) {
             throw std::invalid_argument("duplicate field map name '" + m.name + "'");
+        }
     }
 
     auto model = ROOT::RNTupleModel::Create();
     model->SetDescription("SHiP field map format " + std::to_string(kFieldMapFormatMajor) + "." +
                           std::to_string(kFieldMapFormatMinor) +
                           " (see field_service docs/field_map_format.md)");
-    auto format_major = model->MakeField<std::uint16_t>("format_major");
-    auto format_minor = model->MakeField<std::uint16_t>("format_minor");
-    auto name = model->MakeField<std::string>("name");
-    auto coordinate_system = model->MakeField<std::string>("coordinate_system");
-    auto length_unit = model->MakeField<std::string>("length_unit");
-    auto field_unit = model->MakeField<std::string>("field_unit");
+    auto const format_major = model->MakeField<std::uint16_t>("format_major");
+    auto const format_minor = model->MakeField<std::uint16_t>("format_minor");
+    auto const name = model->MakeField<std::string>("name");
+    auto const coordinate_system = model->MakeField<std::string>("coordinate_system");
+    auto const length_unit = model->MakeField<std::string>("length_unit");
+    auto const field_unit = model->MakeField<std::string>("field_unit");
     auto const axis_min = model->MakeField<StoredLengths>("axis_min");
     auto const axis_max = model->MakeField<StoredLengths>("axis_max");
-    auto axis_n = model->MakeField<std::array<std::uint32_t, 3>>("axis_n");
-    auto index_order = model->MakeField<std::string>("index_order");
-    auto bx = model->MakeField<std::vector<float>>("bx");
-    auto by = model->MakeField<std::vector<float>>("by");
-    auto bz = model->MakeField<std::vector<float>>("bz");
-    auto mirror = model->MakeField<std::array<bool, 3>>("mirror");
+    auto const axis_n = model->MakeField<std::array<std::uint32_t, 3>>("axis_n");
+    auto const index_order = model->MakeField<std::string>("index_order");
+    auto const bx = model->MakeField<std::vector<float>>("bx");
+    auto const by = model->MakeField<std::vector<float>>("by");
+    auto const bz = model->MakeField<std::vector<float>>("bz");
+    auto const mirror = model->MakeField<std::array<bool, 3>>("mirror");
     auto const parity = model->MakeField<StoredParity>("parity");
-    auto source = model->MakeField<std::string>("source");
-    auto comment = model->MakeField<std::string>("comment");
-    auto producer = model->MakeField<std::string>("producer");
-    auto created_utc = model->MakeField<std::string>("created_utc");
+    auto const source = model->MakeField<std::string>("source");
+    auto const comment = model->MakeField<std::string>("comment");
+    auto const producer = model->MakeField<std::string>("producer");
+    auto const created_utc = model->MakeField<std::string>("created_utc");
 
     if (options.truncated_bits != 0) {
         for (auto const* component : {"bx", "by", "bz"}) {
@@ -240,11 +249,13 @@ std::shared_ptr<IFieldEvaluator> loadFieldMap(std::string const& file, std::stri
     // (potentially large) grid is held in memory only once.
     static std::mutex cache_mutex;
     static std::map<std::pair<std::string, std::string>, std::weak_ptr<IFieldEvaluator>> cache;
-    std::lock_guard lock{cache_mutex};
+    std::scoped_lock const lock{cache_mutex};
     auto const key = std::pair{resolved, map};
-    if (auto it = cache.find(key); it != cache.end())
-        if (auto cached = it->second.lock())
+    if (auto const it = cache.find(key); it != cache.end()) {
+        if (auto cached = it->second.lock()) {
             return cached;
+        }
+    }
 
     auto eval = makeFieldEvaluator(readFieldMap(resolved, map));
     cache[key] = eval;

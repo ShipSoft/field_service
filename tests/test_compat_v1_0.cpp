@@ -44,12 +44,15 @@ TEST_CASE("Compat.v1_0.EvaluatesAsSpecified", "[compat]") {
     auto const eval = SHiP::makeFieldEvaluator(SHiP::readFieldMap(kReference, "dipole_quadrant"));
     using namespace mp_units::si::unit_symbols;
     using Catch::Matchers::WithinAbs;
-    for (double const x : {-75.0, 25.0})
-        for (double const y : {-35.0, 5.0})
+    for (double const x : {-75.0, 25.0}) {
+        for (double const y : {-35.0, 5.0}) {
             for (double const z : {-110.0, 60.0}) {
                 auto const B = eval->at(x * mm, y * mm, z * mm);
                 auto const e = SHiP::test::dipoleField(x, y, z);
-                for (std::size_t c = 0; c < 3; ++c)
+                for (std::size_t c = 0; c < 3; ++c) {
                     CHECK_THAT(B[c].numerical_value_in(T), WithinAbs(e[c], 1e-4));
+                }
             }
+        }
+    }
 }

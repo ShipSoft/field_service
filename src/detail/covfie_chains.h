@@ -66,9 +66,9 @@ inline void validate(GridSpec const& spec) {
 
 /// World (mm) to fractional grid index: node `i` on each axis maps to `i`.
 [[nodiscard]] inline covfie::algebra::affine<3> make_affine(GridSpec const& spec) {
-    covfie::algebra::affine<3> translation =
+    covfie::algebra::affine<3> const translation =
         covfie::algebra::affine<3>::translation(-spec.min[0], -spec.min[1], -spec.min[2]);
-    covfie::algebra::affine<3> scaling = covfie::algebra::affine<3>::scaling(
+    covfie::algebra::affine<3> const scaling = covfie::algebra::affine<3>::scaling(
         static_cast<float>(spec.n[0] - 1) / (spec.max[0] - spec.min[0]),
         static_cast<float>(spec.n[1] - 1) / (spec.max[1] - spec.min[1]),
         static_cast<float>(spec.n[2] - 1) / (spec.max[2] - spec.min[2]));
