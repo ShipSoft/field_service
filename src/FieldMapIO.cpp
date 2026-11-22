@@ -143,14 +143,14 @@ std::vector<FieldMap> read_maps(std::string const& path, std::string const* only
                             .comment = comment(i),
                             .producer = producer(i),
                             .created_utc = created_utc(i)};
-            validate(m);
+            if (auto const ok = checkFieldMap(m); !ok) {
+                fail(path, ok.error());
+            }
             maps.push_back(std::move(m));
         }
         return maps;
     } catch (ROOT::RException const& e) {
         fail(path, std::string("malformed field-map file: ") + e.what());
-    } catch (std::invalid_argument const& e) {
-        fail(path, e.what());
     }
 }
 

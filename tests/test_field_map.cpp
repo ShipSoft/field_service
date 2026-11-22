@@ -13,6 +13,7 @@
 #include <cmath>
 #include <limits>
 #include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -104,6 +105,33 @@ TEST_CASE("FieldMap.ValidateRejectsMalformedMaps", "[field_map]") {
     bad = m;
     bad.bz.back() = std::numeric_limits<float>::infinity();
     CHECK_THROWS_AS(SHiP::validate(bad), std::invalid_argument);
+}
+
+TEST_CASE("FieldMap.CheckFieldMapNamesTheProblem", "[field_map]") {
+    auto const m = SHiP::test::uniformMap();
+    CHECK(SHiP::checkFieldMap(m).has_value());
+
+    auto bad = m;
+    bad.grid.n[1] = 1;
+    auto const result = SHiP::checkFieldMap(bad);
+    REQUIRE_FALSE(result.has_value());
+    CHECK(result.error() == "field map '" + m.name + "': axis y needs at least 2 nodes");
+
+    // The first non-finite value is reported, whichever component holds it.
+    bad = m;
+    bad.by[2] = std::numeric_limits<float>::quiet_NaN();
+    bad.bz[0] = std::numeric_limits<float>::quiet_NaN();
+    auto const nan = SHiP::checkFieldMap(bad);
+    REQUIRE_FALSE(nan.has_value());
+    CHECK(nan.error() == "field map '" + m.name + "': By[2] is not finite");
+
+    // validate() throws the same message.
+    try {
+        SHiP::validate(bad);
+        FAIL("validate accepted a non-finite value");
+    } catch (std::invalid_argument const& e) {
+        CHECK(std::string{e.what()} == nan.error());
+    }
 }
 
 TEST_CASE("FieldMap.EvaluatorInterpolatesAndClamps", "[field_map]") {
