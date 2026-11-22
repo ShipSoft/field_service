@@ -48,8 +48,9 @@ int main(int argc, char** argv) {
         try {
             std::size_t consumed = 0;
             args[i] = std::stod(argv[i + 3], &consumed);
-            if (argv[i + 3][consumed] != '\0')
+            if (argv[i + 3][consumed] != '\0') {
                 throw std::invalid_argument{"trailing characters"};
+            }
         } catch (std::exception const&) {
             std::println(stderr, "Invalid number: '{}'", argv[i + 3]);
             usage(argv[0]);

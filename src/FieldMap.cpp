@@ -21,13 +21,15 @@
 namespace SHiP {
 
 std::string resolveFieldMapPath(std::string const& path) {
-    if (std::filesystem::exists(path))
+    if (std::filesystem::exists(path)) {
         return std::filesystem::canonical(path).string();
-    auto bare = std::filesystem::path(path).filename();
+    }
+    auto const bare = std::filesystem::path(path).filename();
     if (auto const* root = std::getenv("SHIPFIELD_ROOT")) {
-        auto resolved = std::filesystem::path(root) / "share" / "field" / bare;
-        if (std::filesystem::exists(resolved))
+        auto const resolved = std::filesystem::path(root) / "share" / "field" / bare;
+        if (std::filesystem::exists(resolved)) {
             return std::filesystem::canonical(resolved).string();
+        }
     }
     throw std::runtime_error("Cannot locate field map '" + path +
                              "'; set SHIPFIELD_ROOT or provide an absolute path");
@@ -75,8 +77,9 @@ void validate(FieldMap const& map) {
     auto fail = [&map](std::string const& what) {
         throw std::invalid_argument("field map '" + map.name + "': " + what);
     };
-    if (map.name.empty())
+    if (map.name.empty()) {
         fail("name must not be empty");
+    }
     auto const& g = map.grid;
     std::size_t total = 1;
     for (auto const [axis, lo, hi, n, mirrored] :
@@ -101,10 +104,11 @@ void validate(FieldMap const& map) {
             fail("parity entries must be odd or even");
         }
     }
-    if (map.bx.size() != total || map.by.size() != total || map.bz.size() != total)
+    if (map.bx.size() != total || map.by.size() != total || map.bz.size() != total) {
         fail("expected " + std::to_string(total) + " values per component, got " +
              std::to_string(map.bx.size()) + "/" + std::to_string(map.by.size()) + "/" +
              std::to_string(map.bz.size()));
+    }
     auto const requireFinite = [&fail](char component, std::vector<float> const& values) {
         for (auto const [i, v] : std::views::enumerate(values)) {
             if (!std::isfinite(v)) {

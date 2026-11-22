@@ -99,21 +99,22 @@ void writeRaw(std::filesystem::path const& path, RawOverrides const& o) {
 }  // namespace
 
 TEST_CASE("FieldMapIO.RoundTripsSeveralMaps", "[field_map_io]") {
-    TempFile tmp("roundtrip");
+    TempFile const tmp("roundtrip");
     auto const maps = SHiP::test::referenceMaps();
     SHiP::writeFieldMaps(tmp.path.string(), maps);
 
     auto const read = SHiP::readFieldMaps(tmp.path.string());
     REQUIRE(read.size() == maps.size());
-    for (std::size_t i = 0; i < maps.size(); ++i)
+    for (std::size_t i = 0; i < maps.size(); ++i) {
         requireEqual(read[i], maps[i]);
+    }
 
     requireEqual(SHiP::readFieldMap(tmp.path.string(), "uniform"), maps[1]);
     CHECK_THROWS_AS(SHiP::readFieldMap(tmp.path.string(), "missing"), std::runtime_error);
 }
 
 TEST_CASE("FieldMapIO.FillsMissingProvenance", "[field_map_io]") {
-    TempFile tmp("provenance");
+    TempFile const tmp("provenance");
     auto m = SHiP::test::uniformMap();
     m.provenance = {};
     SHiP::writeFieldMaps(tmp.path.string(), std::span{&m, 1});
@@ -123,18 +124,19 @@ TEST_CASE("FieldMapIO.FillsMissingProvenance", "[field_map_io]") {
 }
 
 TEST_CASE("FieldMapIO.TruncatedValuesStayClose", "[field_map_io]") {
-    TempFile tmp("truncated");
+    TempFile const tmp("truncated");
     auto const m = SHiP::test::dipoleMap();
     SHiP::writeFieldMaps(tmp.path.string(), std::span{&m, 1}, {.truncated_bits = 20});
     auto const read = SHiP::readFieldMap(tmp.path.string(), m.name);
     REQUIRE(read.by.size() == m.by.size());
     // 20 bits keep 11 of the 23 mantissa bits: relative error below 2^-11.
-    for (std::size_t i = 0; i < m.by.size(); ++i)
+    for (std::size_t i = 0; i < m.by.size(); ++i) {
         CHECK_THAT(read.by[i], Catch::Matchers::WithinRel(m.by[i], 1.0f / 2048.0f));
+    }
 }
 
 TEST_CASE("FieldMapIO.WriterRejectsBadInput", "[field_map_io]") {
-    TempFile tmp("writer_rejects");
+    TempFile const tmp("writer_rejects");
     std::vector<SHiP::FieldMap> dup{SHiP::test::uniformMap(), SHiP::test::uniformMap()};
     CHECK_THROWS_AS(SHiP::writeFieldMaps(tmp.path.string(), dup), std::invalid_argument);
     auto bad = SHiP::test::uniformMap();
@@ -144,7 +146,7 @@ TEST_CASE("FieldMapIO.WriterRejectsBadInput", "[field_map_io]") {
 }
 
 TEST_CASE("FieldMapIO.ReaderAcceptsUnknownFields", "[field_map_io]") {
-    TempFile tmp("unknown_fields");
+    TempFile const tmp("unknown_fields");
     writeRaw(tmp.path, {});
     auto const read = SHiP::readFieldMaps(tmp.path.string());
     REQUIRE(read.size() == 1u);
@@ -152,7 +154,7 @@ TEST_CASE("FieldMapIO.ReaderAcceptsUnknownFields", "[field_map_io]") {
 }
 
 TEST_CASE("FieldMapIO.ReaderRejectsWhatItCannotInterpret", "[field_map_io]") {
-    TempFile tmp("reader_rejects");
+    TempFile const tmp("reader_rejects");
     using Catch::Matchers::ContainsSubstring;
 
     writeRaw(tmp.path, {.format_major = 2});

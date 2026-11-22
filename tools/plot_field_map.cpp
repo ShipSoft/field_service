@@ -105,7 +105,8 @@ int main(int argc, char* argv[]) {
 
     // The map's extent (mm), reflected on mirrored axes; overridden by the
     // arguments.
-    std::array<double, 3> lo{}, hi{};
+    std::array<double, 3> lo{};
+    std::array<double, 3> hi{};
     for (std::size_t a = 0; a < 3; ++a) {
         lo.at(a) = extent.min.at(a).numerical_value_in(SHiP::units::mm);
         hi.at(a) = extent.max.at(a).numerical_value_in(SHiP::units::mm);
@@ -135,12 +136,13 @@ int main(int argc, char* argv[]) {
     gBy_z.SetName("gBy_z");
     gBy_z.SetTitle("B_{y} along beam axis;z [m];B_{y} [T]");
     for (int i = 0; i < nZ1D; ++i) {
-        double const z_mm = zMin + (i + 0.5) * (zMax - zMin) / nZ1D;
+        double const z_mm = zMin + ((i + 0.5) * (zMax - zMin) / nZ1D);
         gBy_z.SetPoint(i, z_mm / 1000.0, byAt(*eval, 0.0, 0.0, z_mm));
     }
 
     // ── 2D planes (axes in metres) ────────────────────────────────────────
-    constexpr int nLong = 200, nTrans = 70;
+    constexpr int nLong = 200;
+    constexpr int nTrans = 70;
     double const zC_mm = 0.5 * (zMin + zMax);
 
     TH2F hBy_xz("hBy_xz", "B_{y} in xz-plane (y=0);z [m];x [m];B_{y} [T]", nLong, zMin / 1000.0,
@@ -157,7 +159,7 @@ int main(int argc, char* argv[]) {
 
     // ── Write ROOT file ───────────────────────────────────────────────────
     {
-        TFile out(out_path.c_str(), "RECREATE");
+        TFile const out(out_path.c_str(), "RECREATE");
         if (out.IsZombie()) {
             std::println(stderr, "error: failed to open {}", out_path);
             return 1;
@@ -177,8 +179,10 @@ int main(int argc, char* argv[]) {
         char const* suffix;
         char const* opt;
     };
-    for (auto const& p : {PdfPlot{&gBy_z, "_by_z", "AL"}, PdfPlot{&hBy_xz, "_by_xz", "COLZ"},
-                          PdfPlot{&hBy_yz, "_by_yz", "COLZ"}, PdfPlot{&hBy_xy, "_by_xy", "COLZ"}}) {
+    for (auto const& p : {PdfPlot{.obj = &gBy_z, .suffix = "_by_z", .opt = "AL"},
+                          PdfPlot{.obj = &hBy_xz, .suffix = "_by_xz", .opt = "COLZ"},
+                          PdfPlot{.obj = &hBy_yz, .suffix = "_by_yz", .opt = "COLZ"},
+                          PdfPlot{.obj = &hBy_xy, .suffix = "_by_xy", .opt = "COLZ"}}) {
         TCanvas c("c", "", 800, 600);
         c.SetGrid();
         p.obj->Draw(p.opt);
