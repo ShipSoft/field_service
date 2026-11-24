@@ -10,6 +10,7 @@
 #include <CLHEP/Units/SystemOfUnits.h>
 #include <memory>
 #include <mp-units/systems/si.h>
+#include <stdexcept>
 #include <utility>
 
 namespace SHiP {
@@ -18,7 +19,12 @@ namespace SHiP {
 /// `G4FieldManager`/`ChordFinder`; the evaluator must be thread-safe.
 class G4MagFieldAdapter final : public G4MagneticField {
    public:
-    explicit G4MagFieldAdapter(std::shared_ptr<IFieldEvaluator> eval) : eval_{std::move(eval)} {}
+    /// Throws `std::invalid_argument` if `eval` is null.
+    explicit G4MagFieldAdapter(std::shared_ptr<IFieldEvaluator> eval) : eval_{std::move(eval)} {
+        if (!eval_) {
+            throw std::invalid_argument("G4MagFieldAdapter: null field evaluator");
+        }
+    }
 
     void GetFieldValue(G4double const point[4], G4double* bField) const override {
         // Geant4 internal length unit is CLHEP::mm; convert to plain mm for the evaluator,
