@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] - 2026-11-24
+
+### Refactor
+
+- *(tools)* Print with std::print
+- Use C++23 ranges where they shorten loops
+- [**breaking**] Model parities as a Parity enum matrix
+- [**breaking**] View field map values through mdspan
+- [**breaking**] Take the ACTS error handler as a move_only_function
+- [**breaking**] Remove the deprecated .cvf API
+- [**breaking**] Use length quantities for grid bounds, boxes and placement
+- Apply clang-tidy's mechanical fixes
+
+### Miscellaneous
+
+- Add CODEOWNERS
+- Sync shared configs
+- Open automated PRs as ship's mate
+- Update pixi lock file
+- Fail pull requests on new clang-tidy findings
+
+### Build
+
+- [**breaking**] Require C++23
 ## [0.5.0] - 2026-10-21
 
 ### Features
