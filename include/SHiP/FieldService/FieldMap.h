@@ -14,6 +14,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <expected>
 #include <mdspan/mdspan.hpp>
 #include <memory>
 #include <string>
@@ -95,9 +96,14 @@ struct FieldMap {
     FieldMapProvenance provenance;
 };
 
-/// Throw `std::invalid_argument` unless `map` is well formed: non-empty name,
-/// at least two nodes and a positive extent per axis, value arrays of
-/// `grid.size()` finite entries, mirrored axes starting at 0, parities of +-1.
+/// Check that `map` is well formed: non-empty name, at least two nodes and a
+/// positive extent per axis, value arrays of `grid.size()` finite entries,
+/// mirrored axes starting at 0, parities of +-1. The error names the map and
+/// the first problem found.
+[[nodiscard]] std::expected<void, std::string> checkFieldMap(FieldMap const& map);
+
+/// Throw `std::invalid_argument` with checkFieldMap()'s error unless `map` is
+/// well formed.
 void validate(FieldMap const& map);
 
 /// Build a thread-safe evaluator for `map`: trilinear interpolation, clamped to

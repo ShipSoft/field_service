@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
+#include <expected>
 #include <filesystem>
 #include <format>
 #include <limits>
@@ -73,52 +74,82 @@ FieldMapSymmetry FieldMapSymmetry::quadrantDipole() {
     return s;
 }
 
-void validate(FieldMap const& map) {
-    auto fail = [&map](std::string const& what) {
-        throw std::invalid_argument("field map '" + map.name + "': " + what);
-    };
-    if (map.name.empty()) {
-        fail("name must not be empty");
-    }
+namespace {
+
+/// Check each axis of `map`'s grid; the total node count if they are fine.
+std::expected<std::size_t, std::string> checkAxes(FieldMap const& map) {
     auto const& g = map.grid;
     std::size_t total = 1;
     for (auto const [axis, lo, hi, n, mirrored] :
          std::views::zip(std::string_view{"xyz"}, g.min, g.max, g.n, map.symmetry.mirror)) {
         if (n < 2) {
-            fail(std::format("axis {} needs at least 2 nodes", axis));
+            return std::unexpected{std::format("axis {} needs at least 2 nodes", axis)};
         }
         if (!isfinite(lo) || !isfinite(hi) || !(hi > lo)) {
-            fail(std::format("axis {} needs finite bounds with max > min", axis));
+            return std::unexpected{std::format("axis {} needs finite bounds with max > min", axis)};
         }
         if (mirrored && lo != Length::zero()) {
-            fail(std::format("mirrored axis {} must start at 0", axis));
+            return std::unexpected{std::format("mirrored axis {} must start at 0", axis)};
         }
         if (total > std::numeric_limits<std::size_t>::max() / n) {
-            fail("node count overflows");
+            return std::unexpected{"node count overflows"};
         }
         total *= n;
     }
+    return total;
+}
+
+std::expected<void, std::string> checkParity(FieldMap const& map) {
     // Parity has a fixed underlying type, so any int8 value casts to it.
     for (auto const p : map.symmetry.parity | std::views::join) {
         if (p != Parity::odd && p != Parity::even) {
-            fail("parity entries must be odd or even");
+            return std::unexpected{"parity entries must be odd or even"};
         }
     }
+    return {};
+}
+
+std::expected<void, std::string> checkFinite(char component, std::vector<float> const& values) {
+    for (auto const [i, v] : std::views::enumerate(values)) {
+        if (!std::isfinite(v)) {
+            return std::unexpected{std::format("B{}[{}] is not finite", component, i)};
+        }
+    }
+    return {};
+}
+
+/// Check that each component has `total` finite values.
+std::expected<void, std::string> checkValues(FieldMap const& map, std::size_t total) {
     if (map.bx.size() != total || map.by.size() != total || map.bz.size() != total) {
-        fail("expected " + std::to_string(total) + " values per component, got " +
-             std::to_string(map.bx.size()) + "/" + std::to_string(map.by.size()) + "/" +
-             std::to_string(map.bz.size()));
+        return std::unexpected{std::format("expected {} values per component, got {}/{}/{}", total,
+                                           map.bx.size(), map.by.size(), map.bz.size())};
     }
-    auto const requireFinite = [&fail](char component, std::vector<float> const& values) {
-        for (auto const [i, v] : std::views::enumerate(values)) {
-            if (!std::isfinite(v)) {
-                fail(std::format("B{}[{}] is not finite", component, i));
-            }
-        }
+    return checkFinite('x', map.bx)
+        .and_then([&map] { return checkFinite('y', map.by); })
+        .and_then([&map] { return checkFinite('z', map.bz); });
+}
+
+}  // namespace
+
+std::expected<void, std::string> checkFieldMap(FieldMap const& map) {
+    auto const named = [&map](std::string const& what) {
+        return "field map '" + map.name + "': " + what;
     };
-    requireFinite('x', map.bx);
-    requireFinite('y', map.by);
-    requireFinite('z', map.bz);
+    if (map.name.empty()) {
+        return std::unexpected{named("name must not be empty")};
+    }
+    return checkAxes(map)
+        .and_then([&map](std::size_t total) {
+            return checkParity(map).transform([total] { return total; });
+        })
+        .and_then([&map](std::size_t total) { return checkValues(map, total); })
+        .transform_error(named);
+}
+
+void validate(FieldMap const& map) {
+    if (auto const ok = checkFieldMap(map); !ok) {
+        throw std::invalid_argument(ok.error());
+    }
 }
 
 bool FieldBox::contains(Length x, Length y, Length z) const {
