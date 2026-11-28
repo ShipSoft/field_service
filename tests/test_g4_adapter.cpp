@@ -13,6 +13,7 @@
 #include <array>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
+#include <stdexcept>
 
 namespace {
 
@@ -39,6 +40,10 @@ TEST_CASE("G4Adapter.ConvertsUnits", "[g4_adapter]") {
     G4double B[3]{};
     adapter.GetFieldValue(origin, B);
     CHECK_THAT(B[1], Catch::Matchers::WithinRel(-1.5 * CLHEP::tesla, 1e-6));
+}
+
+TEST_CASE("G4Adapter.RejectsNullEvaluator", "[g4_adapter]") {
+    CHECK_THROWS_AS(SHiP::G4MagFieldAdapter{nullptr}, std::invalid_argument);
 }
 
 TEST_CASE("G4Adapter.ComposesWithPlacement", "[g4_adapter]") {
