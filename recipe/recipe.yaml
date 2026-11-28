@@ -54,9 +54,6 @@ outputs:
       - mdspan
       - shipdatamodel >=0.6.0
       - geant4
-      # Geant4Config.cmake's find_dependency(EXPAT 2.8.1) needs the expat
-      # headers; geant4's qt_* builds only pull in libexpat at runtime.
-      - expat
       # ACTS adapter (header-only). ActsConfig.cmake finds Boost and Eigen3,
       # which acts-core does not depend on.
       - acts-core
